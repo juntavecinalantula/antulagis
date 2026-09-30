@@ -88,7 +88,13 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
         const fcCalles = filasAFeatureCollection((rCalles.data ?? []) as Fila[]);
         const fcManzanas = filasAFeatureCollection((rManzanas.data ?? []) as Fila[]);
         const fcCauces = filasAFeatureCollection((rCauces.data ?? []) as Fila[]);
-        if (!vivo || !map.loaded()) return;
+        // Asegurar que el estilo esté cargado antes de añadir fuentes y capas
+        if (!map.isStyleLoaded()) {
+          await new Promise<void>((resolve) => {
+            map.once('style.load', () => resolve());
+          });
+        }
+        if (!vivo) return;
 
         map.addSource('manzanas', { type: 'geojson', data: fcManzanas });
         map.addSource('calles', { type: 'geojson', data: fcCalles });
