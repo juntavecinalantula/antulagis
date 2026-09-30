@@ -1,0 +1,219 @@
+import { useEffect, useRef, useState } from 'react';
+import * as maplibregl from 'maplibre-gl';
+import type { Map as MapaML } from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { insforge, faltaConfig } from '../lib/insforgeClient';
+import {
+  bboxDeFCs,
+  escapeHtml,
+  ETIQUETAS,
+  filasAFeatureCollection,
+  type CapasVisibles,
+  type Conteos,
+  type Fila,
+} from '../lib/datos';
+import { aplicarBase, estiloBase, type BaseId } from '../lib/baseMap';
+
+export type EstadoMapa =
+  | { fase: 'cargando' }
+  | { fase: 'listo'; conteos: Conteos }
+  | { fase: 'error'; mensaje: string };
+
+type Props = {
+  visibles: CapasVisibles;
+  base: BaseId;
+  onEstado: (estado: EstadoMapa) => void;
+};
+
+/** Capas de MapLibre que conmuta cada checkbox. */
+const GRUPOS: Record<keyof CapasVisibles, string[]> = {
+  manzanas: ['manzanas-fill', 'manzanas-label'],
+  calles: ['calles-line'],
+  cauces: ['cauces-line'],
+};
+
+function contenidoPopup(propiedades: Record<string, unknown> | null | undefined): string {
+  if (!propiedades) return '';
+  const filas = Object.entries(propiedades)
+    .filter(([k, v]) => k !== 'geom' && v !== null && v !== undefined && v !== '')
+    .map(
+      ([k, v]) =>
+        `<tr><td style="color:#64748b;padding-right:8px;vertical-align:top;">${escapeHtml(ETIQUETAS[k] ?? k)}</td><td><b>${escapeHtml(v)}</b></td></tr>`,
+    )
+    .join('');
+  return `<div style="font-family:sans-serif;font-size:13px;"><table>${filas}</table></div>`;
+}
+
+export default function MapaBarrio({ visibles, base, onEstado }: Props) {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const mapaRef = useRef<MapaML | null>(null);
+  const [capasListas, setCapasListas] = useState(false);
+
+  // Inicialización única del mapa (React.StrictMode la ejecuta dos veces en dev;
+  // la limpieza remove() + el guard `vivo` cubren el primer montaje).
+  useEffect(() => {
+    const cont = mapContainer.current;
+    if (!cont) return;
+    let vivo = true;
+
+    const map = new maplibregl.Map({
+      container: cont,
+      style: estiloBase,
+      center: [-64.24, -27.71], // barrio (Santiago del Estero); se reajusta con fitBounds
+      zoom: 13,
+    });
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
+    mapaRef.current = map;
+
+    async function cargar(): Promise<void> {
+      onEstado({ fase: 'cargando' });
+      if (faltaConfig) {
+        onEstado({
+          fase: 'error',
+          mensaje: 'Faltan VITE_INSFORGE_URL / VITE_INSFORGE_ANON_KEY en frontend/.env',
+        });
+        return;
+      }
+      try {
+        // geom ya llega como geometría GeoJSON desde la REST de InsForge.
+        const [rCalles, rManzanas, rCauces] = await Promise.all([
+          insforge.database.from('calles').select('*').limit(1000),
+          insforge.database.from('manzanas').select('*').limit(1000),
+          insforge.database.from('waterways').select('*').limit(1000),
+        ]);
+        if (!vivo) return;
+        const fallo = rCalles.error ?? rManzanas.error ?? rCauces.error;
+        if (fallo) throw fallo;
+
+        const fcCalles = filasAFeatureCollection((rCalles.data ?? []) as Fila[]);
+        const fcManzanas = filasAFeatureCollection((rManzanas.data ?? []) as Fila[]);
+        const fcCauces = filasAFeatureCollection((rCauces.data ?? []) as Fila[]);
+        if (!vivo || !map.loaded()) return;
+
+        map.addSource('manzanas', { type: 'geojson', data: fcManzanas });
+        map.addSource('calles', { type: 'geojson', data: fcCalles });
+        map.addSource('cauces', { type: 'geojson', data: fcCauces });
+        map.addLayer({
+          id: 'manzanas-fill',
+          type: 'fill',
+          source: 'manzanas',
+          paint: {
+            'fill-color': '#3b82f6',
+            'fill-opacity': 0.15,
+            'fill-outline-color': '#2563eb',
+          },
+        });
+        map.addLayer({
+          id: 'cauces-line',
+          type: 'line',
+          source: 'cauces',
+          paint: { 'line-color': '#0284c7', 'line-width': 2, 'line-dasharray': [3, 1.5] },
+        });
+        map.addLayer({
+          id: 'calles-line',
+          type: 'line',
+          source: 'calles',
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: {
+            // tipo 1 = asfalto (azul) · tipo 2 = ripio c/c cuneta (naranja)
+            'line-color': ['match', ['get', 'tipo'], 1, '#2563eb', 2, '#f97316', '#6b7280'],
+            'line-width': ['interpolate', ['linear'], ['zoom'], 12, 1.5, 17, 4],
+          },
+        });
+        map.addLayer({
+          id: 'manzanas-label',
+          type: 'symbol',
+          source: 'manzanas',
+          minzoom: 14.5,
+          layout: {
+            'text-field': ['coalesce', ['get', 'mza'], ['get', 'codigo'], ''],
+            'text-size': 11,
+            'text-padding': 2,
+          },
+          paint: {
+            'text-color': '#1e3a8a',
+            'text-halo-color': '#ffffff',
+            'text-halo-width': 1.5,
+          },
+        });
+
+        // Popups + cursor puntero en las tres capas
+        for (const id of ['manzanas-fill', 'calles-line', 'cauces-line']) {
+          map.on('click', id, (e) => {
+            const f = e.features?.[0];
+            if (!f) return;
+            new maplibregl.Popup()
+              .setLngLat(e.lngLat)
+              .setHTML(contenidoPopup(f.properties))
+              .addTo(map);
+          });
+          map.on('mouseenter', id, () => {
+            map.getCanvas().style.cursor = 'pointer';
+          });
+          map.on('mouseleave', id, () => {
+            map.getCanvas().style.cursor = '';
+          });
+        }
+
+        // Encuadre sobre el barrio (manzanas + calles; los cauces se extienden más al norte)
+        const bb = bboxDeFCs([fcManzanas, fcCalles]);
+        if (bb && vivo) {
+          map.fitBounds(
+            [
+              [bb[0], bb[1]],
+              [bb[2], bb[3]],
+            ],
+            { padding: 56, maxZoom: 16, duration: 0 },
+          );
+        }
+
+        setCapasListas(true);
+        onEstado({
+          fase: 'listo',
+          conteos: {
+            manzanas: fcManzanas.features.length,
+            calles: fcCalles.features.length,
+            cauces: fcCauces.features.length,
+          },
+        });
+
+      } catch (e) {
+        if (!vivo) return;
+        onEstado({ fase: 'error', mensaje: e instanceof Error ? e.message : String(e) });
+      }
+    }
+
+    map.on('load', () => {
+      void cargar();
+    });
+
+    return () => {
+      vivo = false;
+      mapaRef.current = null;
+      map.remove();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Aplicar visibilidad de capas (y re-aplicar cuando termina la carga)
+  useEffect(() => {
+    const map = mapaRef.current;
+    if (!map || !capasListas) return;
+    for (const [capa, visible] of Object.entries(visibles)) {
+      for (const id of GRUPOS[capa as keyof CapasVisibles]) {
+        if (map.getLayer(id)) {
+          map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
+        }
+      }
+    }
+  }, [visibles, capasListas]);
+
+  // Aplicar mapa base
+  useEffect(() => {
+    const map = mapaRef.current;
+    if (!map || !capasListas) return;
+    aplicarBase(map, base);
+  }, [base, capasListas]);
+
+  return <div ref={mapContainer} className="absolute inset-0" />;
+}
