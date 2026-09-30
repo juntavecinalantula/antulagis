@@ -32,6 +32,9 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: ./frontend
+        env:
+          VITE_INSFORGE_URL: https://ii8ya6m7.us-west.insforge.app
+          VITE_INSFORGE_ANON_KEY: anon_0a8639ca8874039ac2fcecbaa8c1eef5b0a3cf179c8e78ed8b89f02e1f14cef2
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
