@@ -190,6 +190,7 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
     }
 
     map.on('load', () => {
+      console.log('Map load event fired');
       void cargar();
     });
 
