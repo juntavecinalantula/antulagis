@@ -18,6 +18,7 @@ const CAPAS: { id: keyof CapasVisibles; nombre: string }[] = [
   { id: 'cauces', nombre: 'Canal de desagüe' },
   { id: 'entradasActual', nombre: 'Entradas (Actual)' },
   { id: 'entradasProyecto', nombre: 'Entradas (Proyecto)' },
+  { id: 'luminarias', nombre: 'Luminarias públicas' },
 ];
 
 /** Capas de calles cuyo contador incluye el porcentaje sobre el total. */
@@ -145,6 +146,10 @@ export default function PanelCapas({
           <li className="flex items-center gap-2">
             <span className="inline-block w-5 border-t-2 border-dashed border-[#4b0988]" />
             Entradas (Proyecto)
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-yellow-400 ring-1 ring-amber-600" />
+            Luminarias públicas
           </li>
         </ul>
 

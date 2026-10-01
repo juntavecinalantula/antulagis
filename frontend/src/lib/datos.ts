@@ -12,6 +12,7 @@ export type Conteos = {
   cauces: number;
   entradasActual: number;
   entradasProyecto: number;
+  luminarias: number;
 };
 
 /** Estado de visibilidad de cada capa del visor. */
@@ -22,6 +23,7 @@ export type CapasVisibles = {
   cauces: boolean;
   entradasActual: boolean;
   entradasProyecto: boolean;
+  luminarias: boolean;
 };
 
 /** Valores del atributo `tipo` de la tabla `calles`. */

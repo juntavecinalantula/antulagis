@@ -38,6 +38,7 @@ const GRUPOS: Record<keyof CapasVisibles, string[]> = {
   cauces: ['cauces-line'],
   entradasActual: ['entradas-actual-line', 'entradas-actual-label'],
   entradasProyecto: ['entradas-proyecto-line', 'entradas-proyecto-label'],
+  luminarias: ['luminarias-circle'],
 };
 
 /** Capas de MapLibre que reciben popup (incluye las dos de calles). */
@@ -48,6 +49,7 @@ const CAPAS_CON_POPUP = [
   'cauces-line',
   'entradas-actual-line',
   'entradas-proyecto-line',
+  'luminarias-circle',
 ];
 
 function contenidoPopup(propiedades: Record<string, unknown> | null | undefined): string {
@@ -94,20 +96,23 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
       }
       try {
         // geom ya llega como geometría GeoJSON desde la REST de InsForge.
-        const [rCalles, rManzanas, rCauces, rEntradas] = await Promise.all([
+        const [rCalles, rManzanas, rCauces, rEntradas, rLuminarias] = await Promise.all([
           insforge.database.from('calles').select('*').limit(1000),
           insforge.database.from('manzanas').select('*').limit(1000),
           insforge.database.from('waterways').select('*').limit(1000),
           insforge.database.from('entradas').select('*').limit(1000),
+          insforge.database.from('luminaria_publica').select('*').limit(1000),
         ]);
         if (!vivo) return;
-        const fallo = rCalles.error ?? rManzanas.error ?? rCauces.error ?? rEntradas.error;
+        const fallo =
+          rCalles.error ?? rManzanas.error ?? rCauces.error ?? rEntradas.error ?? rLuminarias.error;
         if (fallo) throw fallo;
 
         const fcCalles = filasAFeatureCollection((rCalles.data ?? []) as Fila[]);
         const fcManzanas = filasAFeatureCollection((rManzanas.data ?? []) as Fila[]);
         const fcCauces = filasAFeatureCollection((rCauces.data ?? []) as Fila[]);
         const fcEntradas = filasAFeatureCollection((rEntradas.data ?? []) as Fila[]);
+        const fcLuminarias = filasAFeatureCollection((rLuminarias.data ?? []) as Fila[]);
         // Asegurar que el estilo esté cargado antes de añadir fuentes y capas
         if (!map.isStyleLoaded()) {
           await new Promise<void>((resolve) => {
@@ -120,6 +125,7 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
         map.addSource('calles', { type: 'geojson', data: fcCalles });
         map.addSource('cauces', { type: 'geojson', data: fcCauces });
         map.addSource('entradas', { type: 'geojson', data: fcEntradas });
+        map.addSource('luminarias', { type: 'geojson', data: fcLuminarias });
         map.addLayer({
           id: 'manzanas-fill',
           type: 'fill',
@@ -240,6 +246,19 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
             'text-halo-width': 1.5,
           },
         });
+        // Luminarias públicas: puntos amarillos con brillo (se ven sobre las líneas)
+        map.addLayer({
+          id: 'luminarias-circle',
+          type: 'circle',
+          source: 'luminarias',
+          paint: {
+            'circle-radius': ['interpolate', ['linear'], ['zoom'], 12, 3, 17, 7],
+            'circle-color': '#facc15',
+            'circle-stroke-color': '#a16207',
+            'circle-stroke-width': 1.2,
+            'circle-opacity': 0.95,
+          },
+        });
 
         // Popups + cursor puntero en todas las capas clicables
         for (const id of CAPAS_CON_POPUP) {
@@ -298,6 +317,7 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
             cauces: fcCauces.features.length,
             entradasActual,
             entradasProyecto,
+            luminarias: fcLuminarias.features.length,
           },
         });
 

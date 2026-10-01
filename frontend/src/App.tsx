@@ -12,6 +12,7 @@ function App() {
     cauces: true,
     entradasActual: true,
     entradasProyecto: true,
+    luminarias: true,
   });
   const [base, setBase] = useState<BaseId>('osm');
   const [estado, setEstado] = useState<EstadoMapa>({ fase: 'cargando' });
