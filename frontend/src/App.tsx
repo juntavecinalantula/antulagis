@@ -22,7 +22,7 @@ function App() {
 
       <header className="absolute left-3 top-3 z-10 max-w-[calc(100vw-5.5rem)] rounded-xl border border-slate-200 bg-white/95 px-4 py-2 shadow-lg backdrop-blur">
         <h1 className="text-sm font-bold leading-tight sm:text-base">Mapa GIS Barrio · Mama Antula</h1>
-        <p className="hidden text-xs text-slate-500 sm:block">QGIS → InsForge PostGIS · datos en vivo</p>
+        <p className="hidden text-xs text-slate-500 sm:block">JUNTA VECINAL MAMA ANTULA</p>
       </header>
 
       <PanelCapas
