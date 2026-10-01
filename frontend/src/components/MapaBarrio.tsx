@@ -125,7 +125,7 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
           id: 'cauces-line',
           type: 'line',
           source: 'cauces',
-          paint: { 'line-color': '#0284c7', 'line-width': 2, 'line-dasharray': [3, 1.5] },
+          paint: { 'line-color': '#0ea7f4', 'line-width': 4, 'line-dasharray': [3, 1.5] },
         });
         map.addLayer({
           id: 'calles-asfalto-line',
@@ -135,7 +135,7 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
           filter: ['==', ['get', 'tipo'], TIPO_ASFALTO],
           layout: { 'line-cap': 'round', 'line-join': 'round' },
           paint: {
-            'line-color': '#2563eb',
+            'line-color': '#eb2581',
             'line-width': ['interpolate', ['linear'], ['zoom'], 12, 1.5, 17, 4],
           },
         });
@@ -147,7 +147,7 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
           filter: ['==', ['get', 'tipo'], TIPO_RIPIO],
           layout: { 'line-cap': 'round', 'line-join': 'round' },
           paint: {
-            'line-color': '#f97316',
+            'line-color': '#5af916',
             'line-width': ['interpolate', ['linear'], ['zoom'], 12, 1.5, 17, 4],
           },
         });
