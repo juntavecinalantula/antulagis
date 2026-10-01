@@ -134,7 +134,7 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
           id: 'cauces-line',
           type: 'line',
           source: 'cauces',
-          paint: { 'line-color': '#0f31ddf0', 'line-width': 4, 'line-dasharray': [3, 1.5] },
+          paint: { 'line-color': '#0f31ddf0', 'line-width': 4, 'line-dasharray': [12, 2] },
         });
         map.addLayer({
           id: 'entradas-actual-line',
