@@ -36,8 +36,8 @@ const GRUPOS: Record<keyof CapasVisibles, string[]> = {
   callesAsfalto: ['calles-asfalto-line'],
   callesRipio: ['calles-ripio-line'],
   cauces: ['cauces-line'],
-  entradasActual: ['entradas-actual-line'],
-  entradasProyecto: ['entradas-proyecto-line'],
+  entradasActual: ['entradas-actual-line', 'entradas-actual-label'],
+  entradasProyecto: ['entradas-proyecto-line', 'entradas-proyecto-label'],
 };
 
 /** Capas de MapLibre que reciben popup (incluye las dos de calles). */
@@ -159,6 +159,45 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
             'line-color': '#4b0988',
             'line-width': ['interpolate', ['linear'], ['zoom'], 12, 2, 17, 5],
             'line-dasharray': [2, 1.5],
+          },
+        });
+        // Etiquetas sobre las líneas: cada trazo muestra su estado
+        map.addLayer({
+          id: 'entradas-actual-label',
+          type: 'symbol',
+          source: 'entradas',
+          minzoom: 13,
+          filter: ['==', ['get', 'Entradas_barrio'], ENTRADA_ACTUAL],
+          layout: {
+            'symbol-placement': 'line',
+            'text-field': ENTRADA_ACTUAL,
+            'text-size': 11,
+            'text-padding': 2,
+            'text-keep-upright': true,
+          },
+          paint: {
+            'text-color': '#f53e0b',
+            'text-halo-color': '#ffffff',
+            'text-halo-width': 1.5,
+          },
+        });
+        map.addLayer({
+          id: 'entradas-proyecto-label',
+          type: 'symbol',
+          source: 'entradas',
+          minzoom: 13,
+          filter: ['==', ['get', 'Entradas_barrio'], ENTRADA_PROYECTO],
+          layout: {
+            'symbol-placement': 'line',
+            'text-field': ENTRADA_PROYECTO,
+            'text-size': 11,
+            'text-padding': 2,
+            'text-keep-upright': true,
+          },
+          paint: {
+            'text-color': '#4b0988',
+            'text-halo-color': '#ffffff',
+            'text-halo-width': 1.5,
           },
         });
         map.addLayer({

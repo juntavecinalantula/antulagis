@@ -139,11 +139,11 @@ export default function PanelCapas({
             Canal de desagüe
           </li>
           <li className="flex items-center gap-2">
-            <span className="inline-block w-5 border-t-2 border-[#f59e0b]" />
+            <span className="inline-block w-5 border-t-2 border-[#f53e0b]" />
             Entradas (Actual)
           </li>
           <li className="flex items-center gap-2">
-            <span className="inline-block w-5 border-t-2 border-dashed border-[#a855f7]" />
+            <span className="inline-block w-5 border-t-2 border-dashed border-[#4b0988]" />
             Entradas (Proyecto)
           </li>
         </ul>
