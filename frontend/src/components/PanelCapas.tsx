@@ -35,16 +35,12 @@ export default function PanelCapas({
   const alternar = (capa: keyof CapasVisibles, checked: boolean) =>
     onVisibles({ ...visibles, [capa]: checked });
 
-  // % de cada tipo de pavimento sobre el total de calles
-  const pctAsfalto = conteos ? porcentaje(conteos.callesAsfalto, conteos.calles) : null;
-  const pctRipio = conteos ? porcentaje(conteos.callesRipio, conteos.calles) : null;
-
   return (
     <aside className="absolute right-3 top-3 z-10 w-60 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur">
       <h2 className="mb-2 text-sm font-semibold text-slate-800">Capas</h2>
       <ul className="space-y-1.5 text-sm">
         {CAPAS.map(({ id, nombre }) => {
-          const total = conteos ? conteos[id] : null;
+          // El porcentaje se muestra únicamente en las dos filas de calles
           const pct =
             conteos && CAPAS_CON_PORCENTAJE.includes(id)
               ? `${porcentaje(conteos[id], conteos.calles)}%`
@@ -62,7 +58,7 @@ export default function PanelCapas({
                 {nombre}
               </label>
               <span className="whitespace-nowrap tabular-nums text-xs text-slate-400">
-                {total === null ? '—' : pct ? `${total} · ${pct}` : total}
+                {pct ?? (conteos ? conteos[id] : '—')}
               </span>
             </li>
           );
@@ -75,11 +71,11 @@ export default function PanelCapas({
       <ul className="space-y-1.5 text-xs text-slate-700">
         <li className="flex items-center gap-2">
           <span className="inline-block h-1 w-5 rounded bg-[#2563eb]" />
-          Calles asfaltadas{pctAsfalto !== null ? ` (${pctAsfalto}%)` : ''}
+          Calles asfaltadas
         </li>
         <li className="flex items-center gap-2">
           <span className="inline-block h-1 w-5 rounded bg-[#f97316]" />
-          Ripio con cuneta{pctRipio !== null ? ` (${pctRipio}%)` : ''}
+          Ripio con cuneta
         </li>
         <li className="flex items-center gap-2">
           <span className="inline-block h-3 w-4 rounded-sm border border-blue-700 bg-blue-500/30" />
