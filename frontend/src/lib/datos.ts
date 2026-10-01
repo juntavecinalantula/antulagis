@@ -3,10 +3,40 @@ import type { FeatureCollection, Geometry } from 'geojson';
 /** Fila plana devuelta por la REST de InsForge (una columna `geom` GeoJSON). */
 export type Fila = Record<string, unknown>;
 
-export type Conteos = { manzanas: number; calles: number; cauces: number };
+/** Conteos de features por capa. `calles` es el total (asfalto + ripio). */
+export type Conteos = {
+  manzanas: number;
+  calles: number;
+  callesAsfalto: number;
+  callesRipio: number;
+  cauces: number;
+};
 
 /** Estado de visibilidad de cada capa del visor. */
-export type CapasVisibles = { manzanas: boolean; calles: boolean; cauces: boolean };
+export type CapasVisibles = {
+  manzanas: boolean;
+  callesAsfalto: boolean;
+  callesRipio: boolean;
+  cauces: boolean;
+};
+
+/** Valores del atributo `tipo` de la tabla `calles`. */
+export const TIPO_ASFALTO = 1;
+export const TIPO_RIPIO = 2;
+
+/** Clasifica una calle según su atributo `tipo` (1 = asfalto, 2 = ripio). */
+export function claseDeCalle(tipo: unknown): 'asfalto' | 'ripio' | 'otra' {
+  const t = Number(tipo);
+  if (t === TIPO_ASFALTO) return 'asfalto';
+  if (t === TIPO_RIPIO) return 'ripio';
+  return 'otra';
+}
+
+/** Porcentaje entero (0–100) de `n` sobre `total`; 0 si no hay total. */
+export function porcentaje(n: number, total: number): number {
+  if (total <= 0) return 0;
+  return Math.round((n / total) * 100);
+}
 
 /** Etiquetas en español para los atributos de los popups. */
 export const ETIQUETAS: Record<string, string> = {

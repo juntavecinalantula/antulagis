@@ -5,9 +5,12 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { insforge, faltaConfig } from '../lib/insforgeClient';
 import {
   bboxDeFCs,
+  claseDeCalle,
   escapeHtml,
   ETIQUETAS,
   filasAFeatureCollection,
+  TIPO_ASFALTO,
+  TIPO_RIPIO,
   type CapasVisibles,
   type Conteos,
   type Fila,
@@ -28,9 +31,18 @@ type Props = {
 /** Capas de MapLibre que conmuta cada checkbox. */
 const GRUPOS: Record<keyof CapasVisibles, string[]> = {
   manzanas: ['manzanas-fill', 'manzanas-label'],
-  calles: ['calles-line'],
+  callesAsfalto: ['calles-asfalto-line'],
+  callesRipio: ['calles-ripio-line'],
   cauces: ['cauces-line'],
 };
+
+/** Capas de MapLibre que reciben popup (incluye las dos de calles). */
+const CAPAS_CON_POPUP = [
+  'manzanas-fill',
+  'calles-asfalto-line',
+  'calles-ripio-line',
+  'cauces-line',
+];
 
 function contenidoPopup(propiedades: Record<string, unknown> | null | undefined): string {
   if (!propiedades) return '';
@@ -116,13 +128,26 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
           paint: { 'line-color': '#0284c7', 'line-width': 2, 'line-dasharray': [3, 1.5] },
         });
         map.addLayer({
-          id: 'calles-line',
+          id: 'calles-asfalto-line',
           type: 'line',
           source: 'calles',
+          // tipo 1 = asfalto (azul)
+          filter: ['==', ['get', 'tipo'], TIPO_ASFALTO],
           layout: { 'line-cap': 'round', 'line-join': 'round' },
           paint: {
-            // tipo 1 = asfalto (azul) · tipo 2 = ripio c/c cuneta (naranja)
-            'line-color': ['match', ['get', 'tipo'], 1, '#2563eb', 2, '#f97316', '#6b7280'],
+            'line-color': '#2563eb',
+            'line-width': ['interpolate', ['linear'], ['zoom'], 12, 1.5, 17, 4],
+          },
+        });
+        map.addLayer({
+          id: 'calles-ripio-line',
+          type: 'line',
+          source: 'calles',
+          // tipo 2 = ripio con cuneta (naranja)
+          filter: ['==', ['get', 'tipo'], TIPO_RIPIO],
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: {
+            'line-color': '#f97316',
             'line-width': ['interpolate', ['linear'], ['zoom'], 12, 1.5, 17, 4],
           },
         });
@@ -143,8 +168,8 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
           },
         });
 
-        // Popups + cursor puntero en las tres capas
-        for (const id of ['manzanas-fill', 'calles-line', 'cauces-line']) {
+        // Popups + cursor puntero en todas las capas clicables
+        for (const id of CAPAS_CON_POPUP) {
           map.on('click', id, (e) => {
             const f = e.features?.[0];
             if (!f) return;
@@ -174,11 +199,21 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
         }
 
         setCapasListas(true);
+        // Reparto de calles por tipo de pavimento (para los porcentajes del panel)
+        let callesAsfalto = 0;
+        let callesRipio = 0;
+        for (const f of fcCalles.features) {
+          const clase = claseDeCalle(f.properties?.tipo);
+          if (clase === 'asfalto') callesAsfalto++;
+          else if (clase === 'ripio') callesRipio++;
+        }
         onEstado({
           fase: 'listo',
           conteos: {
             manzanas: fcManzanas.features.length,
             calles: fcCalles.features.length,
+            callesAsfalto,
+            callesRipio,
             cauces: fcCauces.features.length,
           },
         });

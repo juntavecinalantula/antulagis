@@ -7,7 +7,8 @@ import type { BaseId } from './lib/baseMap';
 function App() {
   const [visibles, setVisibles] = useState<CapasVisibles>({
     manzanas: true,
-    calles: true,
+    callesAsfalto: true,
+    callesRipio: true,
     cauces: true,
   });
   const [base, setBase] = useState<BaseId>('osm');
