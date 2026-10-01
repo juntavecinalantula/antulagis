@@ -134,7 +134,7 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
           id: 'cauces-line',
           type: 'line',
           source: 'cauces',
-          paint: { 'line-color': '#f4f40e28', 'line-width': 4, 'line-dasharray': [3, 1.5] },
+          paint: { 'line-color': '#0f31ddf0', 'line-width': 4, 'line-dasharray': [3, 1.5] },
         });
         map.addLayer({
           id: 'entradas-actual-line',
@@ -144,7 +144,7 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
           filter: ['==', ['get', 'Entradas_barrio'], ENTRADA_ACTUAL],
           layout: { 'line-cap': 'round', 'line-join': 'round' },
           paint: {
-            'line-color': '#f59e0b',
+            'line-color': '#f53e0b',
             'line-width': ['interpolate', ['linear'], ['zoom'], 12, 2, 17, 5],
           },
         });
@@ -156,7 +156,7 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
           filter: ['==', ['get', 'Entradas_barrio'], ENTRADA_PROYECTO],
           layout: { 'line-cap': 'round', 'line-join': 'round' },
           paint: {
-            'line-color': '#a855f7',
+            'line-color': '#4b0988',
             'line-width': ['interpolate', ['linear'], ['zoom'], 12, 2, 17, 5],
             'line-dasharray': [2, 1.5],
           },
