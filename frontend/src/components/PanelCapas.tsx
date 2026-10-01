@@ -121,11 +121,11 @@ export default function PanelCapas({
         <h2 className="mb-2 text-sm font-semibold text-slate-800">Leyenda</h2>
         <ul className="space-y-1.5 text-xs text-slate-700">
           <li className="flex items-center gap-2">
-            <span className="inline-block h-1 w-5 rounded bg-[#2563eb]" />
+            <span className="inline-block h-1 w-5 rounded bg-[#f97316]" />
             Calles asfaltadas
           </li>
           <li className="flex items-center gap-2">
-            <span className="inline-block h-1 w-5 rounded bg-[#f97316]" />
+            <span className="inline-block h-1 w-5 rounded bg-[#2563eb]" />
             Ripio con cuneta
           </li>
           <li className="flex items-center gap-2">
