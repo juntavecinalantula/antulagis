@@ -221,5 +221,9 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
     aplicarBase(map, base);
   }, [base, capasListas]);
 
-  return <div ref={mapContainer} className="absolute inset-0" />;
+  // Estilo inline a propósito: la hoja de estilos de MapLibre
+  // (`.maplibregl-map{position:relative}`) se emite DESPUÉS de las utilidades
+  // de Tailwind y le gana al mismo nivel de especificidad; sin `position:absolute`
+  // en línea el contenedor colapsa a altura 0 y el canvas no se ve nunca.
+  return <div ref={mapContainer} className="absolute inset-0" style={{ position: 'absolute', inset: 0 }} />;
 }
