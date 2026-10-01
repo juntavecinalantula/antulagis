@@ -10,6 +10,8 @@ function App() {
     callesAsfalto: true,
     callesRipio: true,
     cauces: true,
+    entradasActual: true,
+    entradasProyecto: true,
   });
   const [base, setBase] = useState<BaseId>('osm');
   const [estado, setEstado] = useState<EstadoMapa>({ fase: 'cargando' });

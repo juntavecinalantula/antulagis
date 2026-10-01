@@ -16,6 +16,8 @@ const CAPAS: { id: keyof CapasVisibles; nombre: string }[] = [
   { id: 'callesAsfalto', nombre: 'Calles asfaltadas' },
   { id: 'callesRipio', nombre: 'Calles de ripio' },
   { id: 'cauces', nombre: 'Canal de desagüe' },
+  { id: 'entradasActual', nombre: 'Entradas (Actual)' },
+  { id: 'entradasProyecto', nombre: 'Entradas (Proyecto)' },
 ];
 
 /** Capas de calles cuyo contador incluye el porcentaje sobre el total. */
@@ -135,6 +137,14 @@ export default function PanelCapas({
           <li className="flex items-center gap-2">
             <span className="inline-block w-5 border-t-2 border-dashed border-sky-600" />
             Canal de desagüe
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="inline-block w-5 border-t-2 border-[#f59e0b]" />
+            Entradas (Actual)
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="inline-block w-5 border-t-2 border-dashed border-[#a855f7]" />
+            Entradas (Proyecto)
           </li>
         </ul>
 

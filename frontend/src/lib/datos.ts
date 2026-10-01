@@ -10,6 +10,8 @@ export type Conteos = {
   callesAsfalto: number;
   callesRipio: number;
   cauces: number;
+  entradasActual: number;
+  entradasProyecto: number;
 };
 
 /** Estado de visibilidad de cada capa del visor. */
@@ -18,11 +20,17 @@ export type CapasVisibles = {
   callesAsfalto: boolean;
   callesRipio: boolean;
   cauces: boolean;
+  entradasActual: boolean;
+  entradasProyecto: boolean;
 };
 
 /** Valores del atributo `tipo` de la tabla `calles`. */
 export const TIPO_ASFALTO = 1;
 export const TIPO_RIPIO = 2;
+
+/** Valores del atributo `Entradas_barrio` de la tabla `entradas`. */
+export const ENTRADA_ACTUAL = 'Actual';
+export const ENTRADA_PROYECTO = 'Proyecto';
 
 /** Clasifica una calle según su atributo `tipo` (1 = asfalto, 2 = ripio). */
 export function claseDeCalle(tipo: unknown): 'asfalto' | 'ripio' | 'otra' {
@@ -51,6 +59,7 @@ export const ETIQUETAS: Record<string, string> = {
   osm_type: 'Tipo OSM',
   full_id: 'ID completo',
   fid: 'fid',
+  Entradas_barrio: 'Estado',
 };
 
 /** Escapa HTML para los popups (los properties vienen de la base de datos). */

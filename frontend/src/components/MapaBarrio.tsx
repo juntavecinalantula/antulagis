@@ -6,6 +6,8 @@ import { insforge, faltaConfig } from '../lib/insforgeClient';
 import {
   bboxDeFCs,
   claseDeCalle,
+  ENTRADA_ACTUAL,
+  ENTRADA_PROYECTO,
   escapeHtml,
   ETIQUETAS,
   filasAFeatureCollection,
@@ -34,6 +36,8 @@ const GRUPOS: Record<keyof CapasVisibles, string[]> = {
   callesAsfalto: ['calles-asfalto-line'],
   callesRipio: ['calles-ripio-line'],
   cauces: ['cauces-line'],
+  entradasActual: ['entradas-actual-line'],
+  entradasProyecto: ['entradas-proyecto-line'],
 };
 
 /** Capas de MapLibre que reciben popup (incluye las dos de calles). */
@@ -42,6 +46,8 @@ const CAPAS_CON_POPUP = [
   'calles-asfalto-line',
   'calles-ripio-line',
   'cauces-line',
+  'entradas-actual-line',
+  'entradas-proyecto-line',
 ];
 
 function contenidoPopup(propiedades: Record<string, unknown> | null | undefined): string {
@@ -88,18 +94,20 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
       }
       try {
         // geom ya llega como geometría GeoJSON desde la REST de InsForge.
-        const [rCalles, rManzanas, rCauces] = await Promise.all([
+        const [rCalles, rManzanas, rCauces, rEntradas] = await Promise.all([
           insforge.database.from('calles').select('*').limit(1000),
           insforge.database.from('manzanas').select('*').limit(1000),
           insforge.database.from('waterways').select('*').limit(1000),
+          insforge.database.from('entradas').select('*').limit(1000),
         ]);
         if (!vivo) return;
-        const fallo = rCalles.error ?? rManzanas.error ?? rCauces.error;
+        const fallo = rCalles.error ?? rManzanas.error ?? rCauces.error ?? rEntradas.error;
         if (fallo) throw fallo;
 
         const fcCalles = filasAFeatureCollection((rCalles.data ?? []) as Fila[]);
         const fcManzanas = filasAFeatureCollection((rManzanas.data ?? []) as Fila[]);
         const fcCauces = filasAFeatureCollection((rCauces.data ?? []) as Fila[]);
+        const fcEntradas = filasAFeatureCollection((rEntradas.data ?? []) as Fila[]);
         // Asegurar que el estilo esté cargado antes de añadir fuentes y capas
         if (!map.isStyleLoaded()) {
           await new Promise<void>((resolve) => {
@@ -111,6 +119,7 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
         map.addSource('manzanas', { type: 'geojson', data: fcManzanas });
         map.addSource('calles', { type: 'geojson', data: fcCalles });
         map.addSource('cauces', { type: 'geojson', data: fcCauces });
+        map.addSource('entradas', { type: 'geojson', data: fcEntradas });
         map.addLayer({
           id: 'manzanas-fill',
           type: 'fill',
@@ -125,7 +134,32 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
           id: 'cauces-line',
           type: 'line',
           source: 'cauces',
-          paint: { 'line-color': '#0ea7f4', 'line-width': 4, 'line-dasharray': [3, 1.5] },
+          paint: { 'line-color': '#f4f40e28', 'line-width': 4, 'line-dasharray': [3, 1.5] },
+        });
+        map.addLayer({
+          id: 'entradas-actual-line',
+          type: 'line',
+          source: 'entradas',
+          // entradas actuales del barrio (ámbar, trazo continuo)
+          filter: ['==', ['get', 'Entradas_barrio'], ENTRADA_ACTUAL],
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: {
+            'line-color': '#f59e0b',
+            'line-width': ['interpolate', ['linear'], ['zoom'], 12, 2, 17, 5],
+          },
+        });
+        map.addLayer({
+          id: 'entradas-proyecto-line',
+          type: 'line',
+          source: 'entradas',
+          // entradas proyectadas (violeta, trazo discontinuo)
+          filter: ['==', ['get', 'Entradas_barrio'], ENTRADA_PROYECTO],
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: {
+            'line-color': '#a855f7',
+            'line-width': ['interpolate', ['linear'], ['zoom'], 12, 2, 17, 5],
+            'line-dasharray': [2, 1.5],
+          },
         });
         map.addLayer({
           id: 'calles-asfalto-line',
@@ -207,6 +241,14 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
           if (clase === 'asfalto') callesAsfalto++;
           else if (clase === 'ripio') callesRipio++;
         }
+        // Reparto de entradas por estado (Actual / Proyecto)
+        let entradasActual = 0;
+        let entradasProyecto = 0;
+        for (const f of fcEntradas.features) {
+          const estado = f.properties?.Entradas_barrio;
+          if (estado === ENTRADA_ACTUAL) entradasActual++;
+          else if (estado === ENTRADA_PROYECTO) entradasProyecto++;
+        }
         onEstado({
           fase: 'listo',
           conteos: {
@@ -215,6 +257,8 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
             callesAsfalto,
             callesRipio,
             cauces: fcCauces.features.length,
+            entradasActual,
+            entradasProyecto,
           },
         });
 
