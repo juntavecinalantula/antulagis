@@ -13,6 +13,7 @@ export type Conteos = {
   entradasActual: number;
   entradasProyecto: number;
   luminarias: number;
+  informacion: number;
 };
 
 /** Estado de visibilidad de cada capa del visor. */
@@ -24,6 +25,7 @@ export type CapasVisibles = {
   entradasActual: boolean;
   entradasProyecto: boolean;
   luminarias: boolean;
+  informacion: boolean;
 };
 
 /** Valores del atributo `tipo` de la tabla `calles`. */
@@ -62,6 +64,8 @@ export const ETIQUETAS: Record<string, string> = {
   full_id: 'ID completo',
   fid: 'fid',
   Entradas_barrio: 'Estado',
+  informacion: 'Información',
+  ubicacion: 'Ubicación',
 };
 
 /** Escapa HTML para los popups (los properties vienen de la base de datos). */
