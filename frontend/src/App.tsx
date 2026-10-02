@@ -10,9 +10,6 @@ function App() {
     callesAsfalto: true,
     callesRipio: true,
     cauces: true,
-    entradasActual: true,
-    entradasProyecto: true,
-    luminarias: true,
     informacion: true,
   });
   const [base, setBase] = useState<BaseId>('osm');
