@@ -1,6 +1,7 @@
 # ---- Secretos y configuración local --------------------------------------
 # El CLI de InsForge guarda acá el id del proyecto y las claves. NO se versiona.
 .insforge/
+.insforge
 .env
 .env.local
 .env.*.local
@@ -27,7 +28,6 @@ frontend/dist/
 Thumbs.db
 
 # InsForge & AI agent skills
-.insforge
 .agent
 .agents
 .augment
