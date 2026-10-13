@@ -1,0 +1,42 @@
+# ---- Secretos y configuración local --------------------------------------
+# El CLI de InsForge guarda acá el id del proyecto y las claves. NO se versiona.
+.insforge/
+.env
+.env.local
+.env.*.local
+frontend/.env
+frontend/.env.local
+
+# ---- Node / Vite ---------------------------------------------------------
+node_modules/
+dist/
+frontend/dist/
+*.local
+.vite/
+
+# ---- QGIS ----------------------------------------------------------------
+# El proyecto QGIS se versiona (antula_db.qgz); los respaldos y los archivos
+# de bloqueo de la sesión, no.
+*.qgz.bak
+*.qgs~
+*.qgz~
+*.aux.xml
+
+# ---- Sistema -------------------------------------------------------------
+.DS_Store
+Thumbs.db
+
+# InsForge & AI agent skills
+.insforge
+.agent
+.agents
+.augment
+.claude
+.cline
+.github/copilot*
+.kilocode
+.qoder
+.qwen
+.roo
+.trae
+.windsurf

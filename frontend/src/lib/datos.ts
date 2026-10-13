@@ -1,0 +1,162 @@
+import type { FeatureCollection, Geometry } from 'geojson';
+
+/** Fila plana devuelta por la REST de InsForge (una columna `geom` GeoJSON). */
+export type Fila = Record<string, unknown>;
+
+/** Conteos de features por capa. `calles` es el total (asfalto + ripio). */
+export type Conteos = {
+  manzanas: number;
+  calles: number;
+  callesAsfalto: number;
+  callesRipio: number;
+  cauces: number;
+  informacion: number;
+};
+
+/** Estado de visibilidad de cada capa del visor. */
+export type CapasVisibles = {
+  manzanas: boolean;
+  callesAsfalto: boolean;
+  callesRipio: boolean;
+  cauces: boolean;
+  informacion: boolean;
+};
+
+/** Valores del atributo `tipo` de la tabla `calles`. */
+export const TIPO_ASFALTO = 1;
+export const TIPO_RIPIO = 2;
+
+/** Clasifica una calle según su atributo `tipo` (1 = asfalto, 2 = ripio). */
+export function claseDeCalle(tipo: unknown): 'asfalto' | 'ripio' | 'otra' {
+  const t = Number(tipo);
+  if (t === TIPO_ASFALTO) return 'asfalto';
+  if (t === TIPO_RIPIO) return 'ripio';
+  return 'otra';
+}
+
+/** Porcentaje entero (0–100) de `n` sobre `total`; 0 si no hay total. */
+export function porcentaje(n: number, total: number): number {
+  if (total <= 0) return 0;
+  return Math.round((n / total) * 100);
+}
+
+/** Etiquetas en español para los atributos de los popups. */
+export const ETIQUETAS: Record<string, string> = {
+  codigo: 'Código',
+  nombre: 'Nombre',
+  mza: 'Manzana',
+  tipo: 'Tipo',
+  Asfalto: 'Pavimento',
+  waterway: 'Tipo de cauce',
+  name: 'Nombre (OSM)',
+  osm_id: 'ID OSM',
+  osm_type: 'Tipo OSM',
+  full_id: 'ID completo',
+  fid: 'fid',
+  informacion: 'Información',
+  ubicacion: 'Ubicación',
+};
+
+/** Escapa HTML para los popups (los properties vienen de la base de datos). */
+export function escapeHtml(value: unknown): string {
+  return String(value ?? '').replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
+  );
+}
+
+/**
+ * Convierte filas de la REST (con `geom` como geometría GeoJSON) a un
+ * FeatureCollection listo para MapLibre. Las filas sin geometría se ignoran.
+ */
+export function filasAFeatureCollection(filas: Fila[]): FeatureCollection {
+  const features = [];
+  for (const fila of filas) {
+    if (!fila.geom || typeof fila.geom !== 'object') continue;
+    const props: Fila = { ...fila };
+    const geom = props.geom as Geometry;
+    delete props.geom;
+    features.push({ type: 'Feature' as const, geometry: geom, properties: props });
+  }
+  return { type: 'FeatureCollection', features };
+}
+
+export type BBox = [number, number, number, number];
+
+/** Par de coordenadas [lng, lat] (un vértice GeoJSON). */
+type Punto = [number, number];
+
+/**
+ * Recorre de forma recursiva las coordenadas de una geometría GeoJSON y
+ * acumula cada vértice (posición [lng, lat]) en `puntos`.
+ */
+function recolectarPuntos(coords: unknown, puntos: Punto[]): void {
+  if (!Array.isArray(coords)) return;
+  if (typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+    puntos.push([coords[0], coords[1]]);
+    return;
+  }
+  for (const sub of coords) recolectarPuntos(sub, puntos);
+}
+
+function puntosDeGeometria(geometria: Geometry | null | undefined, puntos: Punto[]): void {
+  if (!geometria) return;
+  if (geometria.type === 'GeometryCollection') {
+    for (const sub of geometria.geometries) puntosDeGeometria(sub, puntos);
+    return;
+  }
+  recolectarPuntos(geometria.coordinates, puntos);
+}
+
+/** Mediana de una lista de números (0 si está vacía). */
+function mediana(valores: number[]): number {
+  if (valores.length === 0) return 0;
+  const ordenados = [...valores].sort((a, b) => a - b);
+  const mid = Math.floor(ordenados.length / 2);
+  return ordenados.length % 2 === 1
+    ? ordenados[mid]
+    : (ordenados[mid - 1] + ordenados[mid]) / 2;
+}
+
+/**
+ * Distancia máxima (en grados) que puede separar a un vértice de la mediana del
+ * conjunto para seguir considerándose parte del barrio. Un barrio tiene unos
+ * pocos kilómetros; 0,5° ≈ 55 km, holgado para cualquier barrio pero suficiente
+ * para descartar geometrías corruptas o de prueba (p. ej. vértices en (0,0)).
+ */
+const UMBRAL_OUTLIER_GRADOS = 0.5;
+
+/**
+ * Bounding box que une todos los FeatureCollections dados (o null si están vacíos).
+ *
+ * Es robusto a valores atípicos: calcula la mediana de todos los vértices y solo
+ * tiene en cuenta los que caen dentro de `UMBRAL_OUTLIER_GRADOS` de ese centro.
+ * Así, una sola geometría corrupta (p. ej. un cuadrado de prueba en (0,0)) no
+ * desencuadra el mapa a escala continental.
+ */
+export function bboxDeFCs(fcs: FeatureCollection[]): BBox | null {
+  const puntos: Punto[] = [];
+  for (const fc of fcs) {
+    for (const f of fc.features) puntosDeGeometria(f.geometry, puntos);
+  }
+  if (puntos.length === 0) return null;
+
+  const cx = mediana(puntos.map((p) => p[0]));
+  const cy = mediana(puntos.map((p) => p[1]));
+  const validos = puntos.filter(
+    (p) =>
+      Math.abs(p[0] - cx) <= UMBRAL_OUTLIER_GRADOS &&
+      Math.abs(p[1] - cy) <= UMBRAL_OUTLIER_GRADOS,
+  );
+  if (validos.length === 0) return null;
+
+  const acc: BBox = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const [x, y] of validos) {
+    acc[0] = Math.min(acc[0], x);
+    acc[1] = Math.min(acc[1], y);
+    acc[2] = Math.max(acc[2], x);
+    acc[3] = Math.max(acc[3], y);
+  }
+  return Number.isFinite(acc[0]) ? acc : null;
+}

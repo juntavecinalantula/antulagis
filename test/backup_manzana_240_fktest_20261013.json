@@ -1,0 +1,47 @@
+npm notice run npx
+npm notice run 'insforge' db query SELECT id, codigo, nombre, mza, st_astext(geom) AS geom_wkt, created_at, updated_at FROM manzanas WHERE id = 240 --json
+{
+  "rows": [
+    {
+      "id": 240,
+      "codigo": "FK-TEST",
+      "nombre": "Test FK",
+      "mza": null,
+      "geom_wkt": "POLYGON((0 0,1 0,1 1,0 1,0 0))",
+      "created_at": "2026-10-13T01:54:44.425Z",
+      "updated_at": "2026-10-13T01:54:44.425Z"
+    }
+  ],
+  "rowCount": 1,
+  "fields": [
+    {
+      "name": "id",
+      "dataTypeID": 23
+    },
+    {
+      "name": "codigo",
+      "dataTypeID": 1043
+    },
+    {
+      "name": "nombre",
+      "dataTypeID": 1043
+    },
+    {
+      "name": "mza",
+      "dataTypeID": 1043
+    },
+    {
+      "name": "geom_wkt",
+      "dataTypeID": 25
+    },
+    {
+      "name": "created_at",
+      "dataTypeID": 1184
+    },
+    {
+      "name": "updated_at",
+      "dataTypeID": 1184
+    }
+  ]
+}
+EXIT=0
