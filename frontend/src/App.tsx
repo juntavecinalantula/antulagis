@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import MapaBarrio, { type EstadoMapa } from './components/MapaBarrio';
 import PanelCapas from './components/PanelCapas';
+import { FormularioProblema } from './components/formularios/FormularioProblema';
+import { FormularioPropuesta } from './components/formularios/FormularioPropuesta';
+import { PanelFiltros } from './components/filtros/PanelFiltros';
+import { VisualizacionDatos } from './components/visualizacion/VisualizacionDatos';
 import type { CapasVisibles } from './lib/datos';
 import type { BaseId } from './lib/baseMap';
 
@@ -14,43 +18,52 @@ function App() {
   });
   const [base, setBase] = useState<BaseId>('osm');
   const [estado, setEstado] = useState<EstadoMapa>({ fase: 'cargando' });
-  // Cambiar la clave desmonta y remonta el mapa (reintento ante errores de red)
   const [intento, setIntento] = useState(0);
+  const [panelActivo, setPanelActivo] = useState<'capas' | 'filtros' | 'reportar' | 'dashboard'>('capas');
 
   return (
-    <div className="fixed inset-0 font-sans text-slate-900">
+    <div className="fixed inset-0 font-sans text-slate-900 bg-slate-50">
       <MapaBarrio key={intento} visibles={visibles} base={base} onEstado={setEstado} />
 
-      <header className="absolute left-3 top-3 z-10 max-w-[calc(100vw-5.5rem)] rounded-xl border border-slate-200 bg-white/95 px-4 py-2 shadow-lg backdrop-blur">
-        <h1 className="text-sm font-bold leading-tight sm:text-base">JUNTA VECINAL MAMA ANTULA</h1>
-        <p className="hidden text-xs text-slate-500 sm:block">MAPA DEL BARRIO</p>
+      <header className="absolute left-3 top-3 z-20 flex items-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-4 py-2 shadow-lg backdrop-blur">
+        <div>
+          <h1 className="text-sm font-bold leading-tight sm:text-base">MAMA ANTULA</h1>
+          <p className="text-xs text-slate-500">Gestión Vecinal</p>
+        </div>
       </header>
 
-      <PanelCapas
-        visibles={visibles}
-        onVisibles={setVisibles}
-        base={base}
-        onBase={setBase}
-        conteos={estado.fase === 'listo' ? estado.conteos : null}
-      />
+      {/* Menú de Navegación Principal */}
+      <nav className="absolute right-3 top-3 z-20 flex flex-col gap-2">
+        <button onClick={() => setPanelActivo('capas')} className="p-2 bg-white rounded-lg shadow hover:bg-slate-100">Capas</button>
+        <button onClick={() => setPanelActivo('filtros')} className="p-2 bg-white rounded-lg shadow hover:bg-slate-100">Filtros</button>
+        <button onClick={() => setPanelActivo('reportar')} className="p-2 bg-white rounded-lg shadow hover:bg-slate-100">Reportar</button>
+        <button onClick={() => setPanelActivo('dashboard')} className="p-2 bg-white rounded-lg shadow hover:bg-slate-100">Datos</button>
+      </nav>
+
+      {/* Panel de Contenido Dinámico */}
+      <aside className="absolute left-3 top-20 z-10 w-80 max-h-[80vh] overflow-y-auto">
+        {panelActivo === 'capas' && (
+          <PanelCapas
+            visibles={visibles}
+            onVisibles={setVisibles}
+            base={base}
+            onBase={setBase}
+            conteos={estado.fase === 'listo' ? estado.conteos : null}
+          />
+        )}
+        {panelActivo === 'filtros' && <PanelFiltros />}
+        {panelActivo === 'reportar' && (
+          <div className="flex flex-col gap-4">
+            <FormularioProblema />
+            <FormularioPropuesta />
+          </div>
+        )}
+        {panelActivo === 'dashboard' && <VisualizacionDatos conteos={estado.fase === 'listo' ? estado.conteos : null} />}
+      </aside>
 
       {estado.fase === 'cargando' && (
         <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white px-4 py-2 text-sm shadow-lg">
-          Cargando datos del barrio…
-        </div>
-      )}
-
-      {estado.fase === 'error' && (
-        <div className="absolute left-1/2 top-1/2 z-10 w-80 max-w-[90vw] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-red-200 bg-white p-4 text-sm shadow-xl">
-          <p className="mb-1 font-semibold text-red-700">No se pudieron cargar los datos</p>
-          <p className="mb-3 break-words text-slate-600">{estado.mensaje}</p>
-          <button
-            type="button"
-            onClick={() => setIntento((i) => i + 1)}
-            className="rounded bg-red-600 px-3 py-1.5 font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400"
-          >
-            Reintentar
-          </button>
+          Cargando datos…
         </div>
       )}
     </div>
