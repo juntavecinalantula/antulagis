@@ -8,6 +8,15 @@ import { VisualizacionDatos } from './components/visualizacion/VisualizacionDato
 import type { CapasVisibles } from './lib/datos';
 import type { BaseId } from './lib/baseMap';
 
+type PanelId = 'capas' | 'filtros' | 'reportar' | 'dashboard';
+
+const PESTANAS: { id: PanelId; nombre: string }[] = [
+  { id: 'capas', nombre: 'Capas' },
+  { id: 'filtros', nombre: 'Filtros' },
+  { id: 'reportar', nombre: 'Reportar' },
+  { id: 'dashboard', nombre: 'Datos' },
+];
+
 function App() {
   const [visibles, setVisibles] = useState<CapasVisibles>({
     manzanas: true,
@@ -20,67 +29,108 @@ function App() {
   });
   const [base, setBase] = useState<BaseId>('osm');
   const [estado, setEstado] = useState<EstadoMapa>({ fase: 'cargando' });
-  const [intento] = useState(0);
-  const [panelActivo, setPanelActivo] = useState<'capas' | 'filtros' | 'reportar' | 'dashboard'>('capas');
+  const [intento, setIntento] = useState(0);
+  const [panelActivo, setPanelActivo] = useState<PanelId>('capas');
+  const [panelAbierto, setPanelAbierto] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
+
+  const abrirPestana = (id: PanelId) => {
+    setPanelActivo(id);
+    setPanelAbierto(true);
+  };
 
   return (
     <div className="fixed inset-0 font-sans text-slate-900 bg-slate-50">
       <MapaBarrio key={intento} visibles={visibles} base={base} onEstado={setEstado} />
 
-      <header className="absolute left-3 top-3 z-20 flex items-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-4 py-2 shadow-lg backdrop-blur">
-        <div>
-          <h1 className="text-sm font-bold leading-tight sm:text-base">MAMA ANTULA</h1>
-          <p className="text-xs text-slate-500">Gestión Vecinal</p>
-        </div>
+      <header className="absolute left-3 top-3 z-20 rounded-xl border border-slate-200 bg-white/95 px-4 py-2 shadow-lg backdrop-blur">
+        <h1 className="text-sm font-bold leading-tight sm:text-base">MAMA ANTULA</h1>
+        <p className="text-xs text-slate-500">Gestión Vecinal</p>
       </header>
 
-      {/* Menú de Navegación Principal */}
-      <nav className="absolute right-3 top-3 z-20 flex flex-col gap-2">
-        <button onClick={() => setPanelActivo('capas')} className="p-2 bg-white rounded-lg shadow hover:bg-slate-100">Capas</button>
-        <button onClick={() => setPanelActivo('filtros')} className="p-2 bg-white rounded-lg shadow hover:bg-slate-100">Filtros</button>
-        <button onClick={() => setPanelActivo('reportar')} className="p-2 bg-white rounded-lg shadow hover:bg-slate-100">Reportar</button>
-        <button onClick={() => setPanelActivo('dashboard')} className="p-2 bg-white rounded-lg shadow hover:bg-slate-100">Datos</button>
+      {/* Menú de navegación principal (arriba a la derecha) */}
+      <nav className="absolute right-3 top-3 z-20 flex flex-col items-stretch gap-2">
+        <button
+          type="button"
+          onClick={() => setPanelAbierto((v) => !v)}
+          className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          {panelAbierto ? 'Ocultar panel' : 'Mostrar panel'}
+        </button>
+        {PESTANAS.map(({ id, nombre }) => {
+          const activo = panelActivo === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => abrirPestana(id)}
+              aria-pressed={activo}
+              className={`rounded-lg px-3 py-2 text-sm font-medium shadow transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+                activo
+                  ? 'bg-slate-800 text-white'
+                  : 'bg-white text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              {nombre}
+            </button>
+          );
+        })}
       </nav>
 
-      {/* Panel de Contenido Dinámico */}
-      <aside className="absolute left-3 top-20 z-10 w-80 max-h-[80vh] overflow-y-auto">
-        {panelActivo === 'capas' && (
-          <PanelCapas
-            visibles={visibles}
-            onVisibles={setVisibles}
-            base={base}
-            onBase={setBase}
-            conteos={estado.fase === 'listo' ? estado.conteos : null}
-          />
-        )}
-        {panelActivo === 'filtros' && (
-          <PanelFiltros
-            filtroEstado={filtroEstado}
-            setFiltroEstado={setFiltroEstado}
-            filtroCategoria={filtroCategoria}
-            setFiltroCategoria={setFiltroCategoria}
-          />
-        )}
-        {panelActivo === 'reportar' && (
-          <div className="flex flex-col gap-4">
-            <FormularioProblema />
-            <FormularioPropuesta />
-          </div>
-        )}
-        {panelActivo === 'dashboard' && (
-          <VisualizacionDatos
-            totalProblemas={0}
-            totalPropuestas={0}
-            problemasResueltos={0}
-          />
-        )}
-      </aside>
+      {/* Panel de contenido dinámico (izquierda, debajo del encabezado) */}
+      {panelAbierto && (
+        <aside className="absolute left-3 top-20 z-10 w-80 max-w-[calc(100vw-1.5rem)] max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain">
+          {panelActivo === 'capas' && (
+            <PanelCapas
+              visibles={visibles}
+              onVisibles={setVisibles}
+              base={base}
+              onBase={setBase}
+              conteos={estado.fase === 'listo' ? estado.conteos : null}
+            />
+          )}
+          {panelActivo === 'filtros' && (
+            <PanelFiltros
+              filtroEstado={filtroEstado}
+              setFiltroEstado={setFiltroEstado}
+              filtroCategoria={filtroCategoria}
+              setFiltroCategoria={setFiltroCategoria}
+            />
+          )}
+          {panelActivo === 'reportar' && (
+            <div className="flex flex-col gap-4">
+              <FormularioProblema />
+              <FormularioPropuesta />
+            </div>
+          )}
+          {panelActivo === 'dashboard' && (
+            <VisualizacionDatos
+              totalProblemas={0}
+              totalPropuestas={0}
+              problemasResueltos={0}
+            />
+          )}
+        </aside>
+      )}
 
       {estado.fase === 'cargando' && (
         <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white px-4 py-2 text-sm shadow-lg">
           Cargando datos…
+        </div>
+      )}
+
+      {estado.fase === 'error' && (
+        <div className="absolute left-1/2 top-1/2 z-10 w-80 max-w-[90vw] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-red-200 bg-white p-4 text-sm shadow-xl">
+          <p className="mb-1 font-semibold text-red-700">No se pudieron cargar los datos</p>
+          <p className="mb-3 break-words text-slate-600">{estado.mensaje}</p>
+          <button
+            type="button"
+            onClick={() => setIntento((i) => i + 1)}
+            className="rounded bg-red-600 px-3 py-1.5 font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400"
+          >
+            Reintentar
+          </button>
         </div>
       )}
     </div>
