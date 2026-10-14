@@ -34,6 +34,7 @@ function App() {
   const [panelAbierto, setPanelAbierto] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
+  const [refreshDatos, setRefreshDatos] = useState(0);
 
   const abrirPestana = (id: PanelId) => {
     setPanelActivo(id);
@@ -100,17 +101,11 @@ function App() {
           )}
           {panelActivo === 'reportar' && (
             <div className="flex flex-col gap-4">
-              <FormularioProblema />
-              <FormularioPropuesta />
+              <FormularioProblema onSuccess={() => setRefreshDatos((n) => n + 1)} />
+              <FormularioPropuesta onSuccess={() => setRefreshDatos((n) => n + 1)} />
             </div>
           )}
-          {panelActivo === 'dashboard' && (
-            <VisualizacionDatos
-              totalProblemas={0}
-              totalPropuestas={0}
-              problemasResueltos={0}
-            />
-          )}
+          {panelActivo === 'dashboard' && <VisualizacionDatos refreshKey={refreshDatos} />}
         </aside>
       )}
 
