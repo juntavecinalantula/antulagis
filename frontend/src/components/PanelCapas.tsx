@@ -16,6 +16,8 @@ const CAPAS: { id: keyof CapasVisibles; nombre: string }[] = [
   { id: 'callesAsfalto', nombre: 'Calles asfaltadas' },
   { id: 'callesRipio', nombre: 'Calles de ripio' },
   { id: 'cauces', nombre: 'Canal de desagüe' },
+  { id: 'entradas', nombre: 'Entradas al barrio' },
+  { id: 'luminaria', nombre: 'Luminaria pública' },
   { id: 'informacion', nombre: 'Información' },
 ];
 
@@ -136,6 +138,14 @@ export default function PanelCapas({
           <li className="flex items-center gap-2">
             <span className="inline-block w-5 border-t-2 border-dashed border-sky-600" />
             Canal de desagüe
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="inline-block h-1 w-5 rounded bg-[#16a34a]" />
+            Entradas al barrio
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500 ring-1 ring-amber-800" />
+            Luminaria pública
           </li>
           <li className="flex items-center gap-2">
             <span className="inline-block h-2.5 w-2.5 rounded-full bg-sky-500 ring-1 ring-sky-800" />

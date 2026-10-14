@@ -11,6 +11,8 @@ export type Conteos = {
   callesRipio: number;
   cauces: number;
   informacion: number;
+  luminaria: number;
+  entradas: number;
 };
 
 /** Estado de visibilidad de cada capa del visor. */
@@ -20,6 +22,8 @@ export type CapasVisibles = {
   callesRipio: boolean;
   cauces: boolean;
   informacion: boolean;
+  luminaria: boolean;
+  entradas: boolean;
 };
 
 /** Valores del atributo `tipo` de la tabla `calles`. */
@@ -55,6 +59,14 @@ export const ETIQUETAS: Record<string, string> = {
   fid: 'fid',
   informacion: 'Información',
   ubicacion: 'Ubicación',
+  // Luminaria pública
+  potencia_w: 'Potencia (W)',
+  soporte: 'Soporte',
+  altura_m: 'Altura (m)',
+  estado: 'Estado',
+  // Entradas al barrio
+  Entradas_barrio: 'Tipo de acceso',
+  longitud_m: 'Longitud (m)',
 };
 
 /** Escapa HTML para los popups (los properties vienen de la base de datos). */

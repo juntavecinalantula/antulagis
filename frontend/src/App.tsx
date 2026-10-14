@@ -15,11 +15,15 @@ function App() {
     callesRipio: true,
     cauces: true,
     informacion: true,
+    luminaria: true,
+    entradas: true,
   });
   const [base, setBase] = useState<BaseId>('osm');
   const [estado, setEstado] = useState<EstadoMapa>({ fase: 'cargando' });
-  const [intento, setIntento] = useState(0);
+  const [intento] = useState(0);
   const [panelActivo, setPanelActivo] = useState<'capas' | 'filtros' | 'reportar' | 'dashboard'>('capas');
+  const [filtroEstado, setFiltroEstado] = useState('');
+  const [filtroCategoria, setFiltroCategoria] = useState('');
 
   return (
     <div className="fixed inset-0 font-sans text-slate-900 bg-slate-50">
@@ -51,14 +55,27 @@ function App() {
             conteos={estado.fase === 'listo' ? estado.conteos : null}
           />
         )}
-        {panelActivo === 'filtros' && <PanelFiltros />}
+        {panelActivo === 'filtros' && (
+          <PanelFiltros
+            filtroEstado={filtroEstado}
+            setFiltroEstado={setFiltroEstado}
+            filtroCategoria={filtroCategoria}
+            setFiltroCategoria={setFiltroCategoria}
+          />
+        )}
         {panelActivo === 'reportar' && (
           <div className="flex flex-col gap-4">
             <FormularioProblema />
             <FormularioPropuesta />
           </div>
         )}
-        {panelActivo === 'dashboard' && <VisualizacionDatos conteos={estado.fase === 'listo' ? estado.conteos : null} />}
+        {panelActivo === 'dashboard' && (
+          <VisualizacionDatos
+            totalProblemas={0}
+            totalPropuestas={0}
+            problemasResueltos={0}
+          />
+        )}
       </aside>
 
       {estado.fase === 'cargando' && (
