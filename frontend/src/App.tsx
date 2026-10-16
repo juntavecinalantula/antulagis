@@ -46,6 +46,7 @@ function App() {
   // Modo "esperando click en el mapa": cuando está activo, el mapa notifica
   // cada click al padre en lugar de abrir un popup.
   const [modoUbicacion, setModoUbicacion] = useState(false);
+  const [maximizado, setMaximizado] = useState(false);
 
   /** Apoyar / retirar el apoyo a una propuesta desde el popup del mapa. */
   const apoyarPropuesta = async (id: number, apoyado: boolean) => {
@@ -69,8 +70,8 @@ function App() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="relative w-[500px] h-[400px] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all duration-300 ${maximizado ? 'p-0 bg-transparent' : 'p-4'}`}>
+      <div className={`relative bg-white transition-all duration-300 overflow-hidden flex flex-col ${maximizado ? 'w-full h-full rounded-none shadow-none' : 'w-[850px] h-[600px] rounded-2xl shadow-2xl border border-slate-200'}`}>
         <MapaBarrio
           key={intento}
           visibles={visibles}
