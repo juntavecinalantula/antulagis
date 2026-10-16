@@ -3,6 +3,12 @@ import { insforge } from '../../lib/insforgeClient';
 
 interface FormularioPropuestaProps {
   onSuccess?: () => void;
+  /** Llamado cuando el vecino activa "ubicar en el mapa". */
+  onIniciarUbicacion?: () => void;
+  /** Ubicación elegida haciendo clic en el mapa (lng, lat). */
+  ubicacion?: [number, number] | null;
+  /** true mientras el modo "ubicar en el mapa" está activo. */
+  modoUbicacion?: boolean;
 }
 
 // Categorías reales del catálogo `categoria_propuesta` (las que acepta la BD).
@@ -22,7 +28,12 @@ const CATEGORIAS: { valor: string; etiqueta: string }[] = [
   { valor: 'otro', etiqueta: 'Otro' },
 ];
 
-export const FormularioPropuesta: React.FC<FormularioPropuestaProps> = ({ onSuccess }) => {
+export const FormularioPropuesta: React.FC<FormularioPropuestaProps> = ({
+  onSuccess,
+  onIniciarUbicacion,
+  ubicacion,
+  modoUbicacion = false,
+}) => {
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [categoria, setCategoria] = useState('otro');
@@ -30,29 +41,33 @@ export const FormularioPropuesta: React.FC<FormularioPropuestaProps> = ({ onSucc
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
-    if (direccion.trim().length < 3) {
-      setErrorMsg('Indicá una dirección o referencia de la zona de la propuesta.');
+    if (direccion.trim().length < 3 && !ubicacion) {
+      setErrorMsg('Indicá una dirección o ubicá el punto en el mapa para georreferenciar la propuesta.');
       return;
     }
     setLoading(true);
     try {
-      const { error } = await insforge.database.from('propuestas').insert([
-        {
-          titulo: titulo.trim(),
-          descripcion: descripcion.trim(),
-          categoria,
-          direccion: direccion.trim(),
-          canal: 'web',
-        },
-      ]);
+      const registro: Record<string, unknown> = {
+        titulo: titulo.trim(),
+        descripcion: descripcion.trim(),
+        categoria,
+        direccion: direccion.trim() || null,
+        canal: 'web',
+      };
+      if (ubicacion) {
+        // El trigger sincronizar_lat_lon arma `geom` desde lat/lon.
+        registro.lat = ubicacion[1];
+        registro.lon = ubicacion[0];
+      }
+      const { error } = await insforge.database.from('propuestas').insert([registro]);
       if (error) throw error;
       alert('Propuesta enviada exitosamente');
-      setTitulo('');
-      setDescripcion('');
-      setDireccion('');
+      setifie('');
+      setDescripción('');
+      setDirección('');
       onSuccess?.();
     } catch (err) {
       console.error(err);
