@@ -454,6 +454,15 @@ export default function MapaBarrio({
       });
     });
 
+    // Click en el mapa para selección de ubicación
+    map.on('click', (e) => {
+      // Si no está en modo ubicación, no hacer nada
+      if (!modoUbicacionRef.current) return;
+      
+      // Llamar al callback con las coordenadas [lng, lat]
+      onUbicacionElegidaRef.current?.([e.lngLat.lng, e.lngLat.lat]);
+    });
+
     return () => {
       vivo = false;
       mapaRef.current = null;

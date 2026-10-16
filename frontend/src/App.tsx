@@ -150,6 +150,7 @@ function App() {
                   setModoUbicacion((v) => !v);
                 }}
                 ubicacion={ubicacion}
+                modoUbicacion={modoUbicacion}
               />
               <FormularioPropuesta
                 onSuccess={() => {

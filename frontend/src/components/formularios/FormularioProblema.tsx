@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { insforge } from '../../lib/insforgeClient';
 import { CATEGORIAS_PROBLEMA, PRIORIDADES } from '../../lib/datos';
+import { coordinatesToAddress } from '../../lib/geocoding';
 
 interface FormularioProblemaProps {
   onSuccess?: () => void;
@@ -31,6 +32,27 @@ export const FormularioProblema: React.FC<FormularioProblemaProps> = ({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [codigoEnviado, setCodigoEnviado] = useState<string | null>(null);
+  const [geocodingLoading, setGeocodingLoading] = useState(false);
+  const [geocodingError, setGeocodingError] = useState<string | null>(null);
+
+  // Obtener dirección a partir de coordenadas
+  const obtenerDireccionDesdeCoordenadas = async (lat: number, lng: number) => {
+    setGeocodingLoading(true);
+    setGeocodingError(null);
+    try {
+      const address = await coordinatesToAddress(lat, lng);
+      if (address) {
+        setDireccion(address);
+      } else {
+        setGeocodingError('No se pudo obtener la dirección para estas coordenadas');
+      }
+    } catch (error) {
+      console.error('Error al obtener dirección:', error);
+      setGeocodingError('Error al obtener la dirección');
+    } finally {
+      setGeocodingLoading(false);
+    }
+  };
 
   const puedeAvanzar =
     (paso === 1 && titulo.trim().length >= 3 && descripcion.trim().length >= 10) ||
@@ -219,9 +241,22 @@ export const FormularioProblema: React.FC<FormularioProblemaProps> = ({
             </p>
           )}
           {ubicacion && (
-            <p className="mt-2 text-xs text-emerald-700">
-              ✔ Ubicación elegida: {ubicacion[0].toFixed(5)}, {ubicacion[1].toFixed(5)}
-            </p>
+            <div className="mt-2">
+              <p className="text-xs text-emerald-700 mb-2">
+                ✔ Ubicación elegida: {ubicacion[0].toFixed(5)}, {ubicacion[1].toFixed(5)}
+              </p>
+              <button
+                type="button"
+                onClick={() => obtenerDireccionDesdeCoordenadas(ubicacion[1], ubicacion[0])}
+                disabled={geocodingLoading}
+                className="w-full rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-400 mb-2"
+              >
+                {geocodingLoading ? 'Obteniendo dirección...' : 'Obtener dirección automáticamente'}
+              </button>
+              {geocodingError && (
+                <p className="text-xs text-red-600 mb-2">{geocodingError}</p>
+              )}
+            </div>
           )}
           {!direccion.trim() && !ubicacion && (
             <p className="mt-2 text-xs text-red-600">
