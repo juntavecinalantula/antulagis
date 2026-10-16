@@ -1,4 +1,4 @@
-import { porcentaje, type CapasVisibles, type Conteos } from '../lib/datos';
+import { ESTADOS_REPORTE, porcentaje, type CapasVisibles, type Conteos } from '../lib/datos';
 import type { BaseId } from '../lib/baseMap';
 
 type Props = {
@@ -18,6 +18,8 @@ const CAPAS: { id: keyof CapasVisibles; nombre: string }[] = [
   { id: 'entradas', nombre: 'Entradas al barrio' },
   { id: 'luminaria', nombre: 'Luminaria pública' },
   { id: 'informacion', nombre: 'Información' },
+  { id: 'problemas', nombre: 'Problemas reportados' },
+  { id: 'propuestas', nombre: 'Propuestas vecinales' },
 ];
 
 /** Capas de calles cuyo contador incluye el porcentaje sobre el total. */
@@ -48,7 +50,7 @@ export default function PanelCapas({
           // El porcentaje se muestra únicamente en las dos filas de calles
           const pct =
             conteos && CAPAS_CON_PORCENTAJE.includes(id)
-              ? `${porcentaje(conteos[id], conteos.calles)}%`
+              ? `${porcentaje(conteos[id] ?? 0, conteos.calles)}%`
               : null;
           return (
             <li key={id} className="flex items-center gap-2">
@@ -63,7 +65,7 @@ export default function PanelCapas({
                 {nombre}
               </label>
               <span className="whitespace-nowrap tabular-nums text-xs text-slate-400">
-                {pct ?? (conteos ? conteos[id] : '—')}
+                {pct ?? (conteos ? (conteos[id] ?? '—') : '—')}
               </span>
             </li>
           );
@@ -102,6 +104,20 @@ export default function PanelCapas({
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-sky-500 ring-1 ring-sky-800" />
           Información
         </li>
+      </ul>
+
+      {/* Leyenda de estados vecinales (circuito tipo pulsociudadano.app) */}
+      <h3 className="mt-3 mb-2 text-md font-bold text-slate-800">Estados de reportes</h3>
+      <ul className="grid grid-cols-2 gap-x-2 space-y-1.5 text-xs text-slate-700">
+        {ESTADOS_REPORTE.map((e) => (
+          <li key={e.valor} className="flex items-center gap-2">
+            <span
+              className="inline-block h-2.5 w-2.5 rounded-full ring-1 ring-slate-400"
+              style={{ backgroundColor: e.color }}
+            />
+            {e.etiqueta}
+          </li>
+        ))}
       </ul>
 
       <hr className="my-3 border-slate-200" />

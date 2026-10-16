@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { FeatureCollection } from 'geojson';
 import * as maplibregl from 'maplibre-gl';
 import type { Map as MapaML } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -7,6 +8,9 @@ import {
   bboxDeFCs,
   claseDeCalle,
   escapeHtml,
+  etiquetaCategoria,
+  etiquetaEstado,
+  ESTADOS_REPORTE,
   ETIQUETAS,
   filasAFeatureCollection,
   TIPO_ASFALTO,
@@ -22,10 +26,21 @@ export type EstadoMapa =
   | { fase: 'listo'; conteos: Conteos }
   | { fase: 'error'; mensaje: string };
 
+/** Filtros activos sobre las capas vecinales (problemas / propuestas). */
+export type FiltroReportes = {
+  estado: string; // '' = todos
+  categoria: string; // '' = todas
+};
+
 type Props = {
   visibles: CapasVisibles;
   base: BaseId;
   onEstado: (estado: EstadoMapa) => void;
+  filtros?: FiltroReportes;
+  /** Cambia para recargar problemas/propuestas tras un nuevo reporte. */
+  refreshKey?: number;
+  /** Callback del popup de propuestas: apoyar / retirar apoyo. */
+  onApoyarPropuesta?: (id: number, apoyado: boolean) => void;
 };
 
 /** Capas de MapLibre que conmuta cada checkbox. */
@@ -37,6 +52,8 @@ const GRUPOS: Record<keyof CapasVisibles, string[]> = {
   informacion: ['informacion-circle'],
   luminaria: ['luminaria-circle'],
   entradas: ['entradas-line'],
+  problemas: ['problemas-circle'],
+  propuestas: ['propuestas-circle'],
 };
 
 /** Capas de MapLibre que reciben popup (incluye las dos de calles). */
@@ -48,24 +65,77 @@ const CAPAS_CON_POPUP = [
   'informacion-circle',
   'luminaria-circle',
   'entradas-line',
+  'problemas-circle',
+  'propuestas-circle',
 ];
 
-function contenidoPopup(propiedades: Record<string, unknown> | null | undefined): string {
+/** Propiedades que no deben mostrarse crudas en el popup. */
+const POPUP_OMITIR = new Set(['geom', 'dominio_categoria', 'dominio_estado', 'dominio_prioridad', 'dominio_canal', 'autor_id', 'barrio_id']);
+
+function contenidoPopup(
+  propiedades: Record<string, unknown> | null | undefined,
+): string {
   if (!propiedades) return '';
   const filas = Object.entries(propiedades)
-    .filter(([k, v]) => k !== 'geom' && v !== null && v !== undefined && v !== '')
-    .map(
-      ([k, v]) =>
-        `<tr><td style="color:#64748b;padding-right:8px;vertical-align:top;">${escapeHtml(ETIQUETAS[k] ?? k)}</td><td><b>${escapeHtml(v)}</b></td></tr>`,
-    )
+    .filter(([k, v]) => !POPUP_OMITIR.has(k) && v !== null && v !== undefined && v !== '')
+    .map(([k, v]) => {
+      let valor: unknown = v;
+      // Traducir catálogo a etiqueta legible (estilo Pulso Ciudadano / Munify)
+      if (k === 'estado') valor = etiquetaEstado(v);
+      else if (k === 'categoria') valor = etiquetaCategoria(v);
+      else if ((k === 'created_at' || k === 'resuelto_en' || k === 'updated_at') && v) {
+        valor = new Date(String(v)).toLocaleString('es-AR');
+      }
+      return `<tr><td style="color:#64748b;padding-right:8px;vertical-align:top;">${escapeHtml(ETIQUETAS[k] ?? k)}</td><td><b>${escapeHtml(valor)}</b></td></tr>`;
+    })
     .join('');
   return `<div style="font-family:sans-serif;font-size:13px;"><table>${filas}</table></div>`;
 }
 
-export default function MapaBarrio({ visibles, base, onEstado }: Props) {
+/** Color del punto según el estado del reporte (catálogo `estado_reporte`). */
+function expresionColorEstado(): maplibregl.ExpressionSpecification {
+  const steps: unknown[] = [];
+  for (const e of ESTADOS_REPORTE) steps.push(e.valor, e.color);
+  return ['coalesce', ['match', ['get', 'estado'], ...steps, '#64748b']] as unknown as maplibregl.ExpressionSpecification;
+}
+
+export default function MapaBarrio({ visibles, base, onEstado, filtros, refreshKey = 0, onApoyarPropuesta }: Props) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaML | null>(null);
   const [capasListas, setCapasListas] = useState(false);
+  // Última respuesta conocida de problemas/propuestas para poder refiltrar sin recargar.
+  const ultimosReportes = useRef<{ fcProb: FeatureCollection; fcProp: FeatureCollection } | null>(null);
+  // Refs para leer props actuales desde handlers registrados una sola vez.
+  const filtrosRef = useRef(filtros);
+  filtrosRef.current = filtros;
+  const apoyarRef = useRef(onApoyarPropuesta);
+  apoyarRef.current = onApoyarPropuesta;
+
+  /**
+   * Carga problemas y propuestas georreferenciados aplicando los filtros de
+   * estado/categoría (patrón "mapa público con filtros" de pulsociudadano.app).
+   */
+  async function recargarReportes(map: MapaML): Promise<void> {
+    const f = filtrosRef.current ?? { estado: '', categoria: '' };
+    let qProb = insforge.database.from('problemas').select('*').not('geom', 'is', null).limit(2000);
+    let qProp = insforge.database.from('propuestas').select('*').not('geom', 'is', null).limit(2000);
+    if (f.estado) {
+      qProb = qProb.eq('estado', f.estado);
+      qProp = qProp.eq('estado', f.estado);
+    }
+    if (f.categoria) {
+      qProb = qProb.eq('categoria', f.categoria);
+      qProp = qProp.eq('categoria', f.categoria);
+    }
+    const [rProb, rProp] = await Promise.all([qProb, qProp]);
+    const fallo = rProb.error ?? rProp.error;
+    if (fallo) throw fallo;
+    const fcProb = filasAFeatureCollection((rProb.data ?? []) as Fila[]);
+    const fcProp = filasAFeatureCollection((rProp.data ?? []) as Fila[]);
+    ultimosReportes.current = { fcProb, fcProp };
+    (map.getSource('problemas') as maplibregl.GeoJSONSource | undefined)?.setData(fcProb);
+    (map.getSource('propuestas') as maplibregl.GeoJSONSource | undefined)?.setData(fcProp);
+  }
 
   // Inicialización única del mapa (React.StrictMode la ejecuta dos veces en dev;
   // la limpieza remove() + el guard `vivo` cubren el primer montaje).
@@ -227,6 +297,51 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
           },
         });
 
+        // ── Capas vecinales (problemas / propuestas) ────────────────────────
+        // Inspiradas en el "mapa público con cada reclamo activo" de
+        // pulsociudadano.app y munify: puntos coloreados por estado.
+        map.addSource('problemas', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        map.addSource('propuestas', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        map.addLayer({
+          id: 'problemas-circle',
+          type: 'circle',
+          source: 'problemas',
+          paint: {
+            'circle-radius': ['interpolate', ['linear'], ['zoom'], 12, 5, 17, 9],
+            'circle-color': expresionColorEstado(),
+            'circle-stroke-color': '#7f1d1d',
+            'circle-stroke-width': 1.2,
+            'circle-opacity': 0.92,
+          },
+        });
+        map.addLayer({
+          id: 'propuestas-circle',
+          type: 'circle',
+          source: 'propuestas',
+          paint: {
+            'circle-radius': ['interpolate', ['linear'], ['zoom'], 12, 5, 17, 9],
+            'circle-color': expresionColorEstado(),
+            'circle-stroke-color': '#14532d',
+            'circle-stroke-width': 1.2,
+            'circle-opacity': 0.92,
+          },
+        });
+        // Anillo punteado para distinguir propuestas (verde) de problemas (rojo)
+        map.addLayer({
+          id: 'propuestas-ring',
+          type: 'circle',
+          source: 'propuestas',
+          paint: {
+            'circle-radius': ['interpolate', ['linear'], ['zoom'], 12, 9, 17, 14],
+            'circle-color': 'rgba(0,0,0,0)',
+            'circle-stroke-color': '#16a34a',
+            'circle-stroke-width': 1.5,
+          },
+        });
+
+        // Cargar los reportes vecinales georreferenciados (con filtros activos)
+        await recargarReportes(map);
+
         // Popups + cursor puntero en todas las capas clicables
         for (const id of CAPAS_CON_POPUP) {
           map.on('click', id, (e) => {
@@ -290,6 +405,25 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
       void cargar();
     });
 
+    // Popup enriquecido para propuestas: ficha + botón "Apoyar" (Ciudad Abierta).
+    map.on('click', 'propuestas-circle', (e) => {
+      const f = e.features?.[0];
+      if (!f || f.id === undefined && f.properties?.id === undefined) return;
+      const id = Number(f.properties?.id);
+      const html = contenidoPopup(f.properties);
+      new maplibregl.Popup({ closeButton: true })
+        .setLngLat(e.lngLat)
+        .setHTML(
+          `${html}<button id="btn-apoyar-${id}" style="margin-top:8px;width:100%;background:#16a34a;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:600;cursor:pointer;">👍 Apoyar propuesta</button>`,
+        )
+        .addTo(map);
+      // Enlazar el botón después de que el popup esté en el DOM.
+      requestAnimationFrame(() => {
+        const btn = document.getElementById(`btn-apoyar-${id}`);
+        if (btn) btn.onclick = () => apoyarRef.current?.(id, true);
+      });
+    });
+
     return () => {
       vivo = false;
       mapaRef.current = null;
@@ -309,7 +443,19 @@ export default function MapaBarrio({ visibles, base, onEstado }: Props) {
         }
       }
     }
+    // La visibilidad del anillo de propuestas sigue a la capa base.
+    if (map.getLayer('propuestas-ring')) {
+      map.setLayoutProperty('propuestas-ring', 'visibility', visibles.propuestas ? 'visible' : 'none');
+    }
   }, [visibles, capasListas]);
+
+  // Recargar reportes vecinales cuando cambian los filtros o se refresca (nuevo reporte)
+  useEffect(() => {
+    const map = mapaRef.current;
+    if (!map || !capasListas) return;
+    void recargarReportes(map).catch((e) => console.error('refiltrando reportes', e));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtros?.estado, filtros?.categoria, refreshKey, capasListas]);
 
   // Aplicar mapa base
   useEffect(() => {

@@ -13,6 +13,9 @@ export type Conteos = {
   informacion: number;
   luminaria: number;
   entradas: number;
+  /** Reportes vecinales georreferenciados (0 si la consulta aún no está cableada). */
+  problemas?: number;
+  propuestas?: number;
 };
 
 /** Estado de visibilidad de cada capa del visor. */
@@ -24,7 +27,92 @@ export type CapasVisibles = {
   informacion: boolean;
   luminaria: boolean;
   entradas: boolean;
+  problemas: boolean;
+  propuestas: boolean;
 };
+
+/**
+ * Estados del catálogo `estado_reporte` (migración participacion.sql), con el
+ * color oficial del catálogo. Inspirado en el circuito visible de
+ * pulsociudadano.app: nuevo → en revisión → en proceso → resuelto.
+ */
+export const ESTADOS_REPORTE: { valor: string; etiqueta: string; color: string }[] = [
+  { valor: 'nuevo',       etiqueta: 'Nuevo',       color: '#64748b' },
+  { valor: 'en_revision', etiqueta: 'En revisión', color: '#eab308' },
+  { valor: 'en_proceso',  etiqueta: 'En proceso',  color: '#0ea5e9' },
+  { valor: 'resuelto',    etiqueta: 'Resuelto',    color: '#22c55e' },
+  { valor: 'rechazado',   etiqueta: 'Rechazado',   color: '#ef4444' },
+  { valor: 'archivado',   etiqueta: 'Archivado',   color: '#94a3b8' },
+];
+
+/** Mapa valor → etiqueta/color para popups y listados. */
+export const ESTADO_INFO = new Map(ESTADOS_REPORTE.map((e) => [e.valor, e]));
+
+/** Prioridades del catálogo `prioridad`. */
+export const PRIORIDADES: { valor: string; etiqueta: string; color: string }[] = [
+  { valor: 'baja',    etiqueta: 'Baja',    color: '#22c55e' },
+  { valor: 'media',   etiqueta: 'Media',   color: '#eab308' },
+  { valor: 'alta',    etiqueta: 'Alta',    color: '#f97316' },
+  { valor: 'urgente', etiqueta: 'Urgente', color: '#dc2626' },
+];
+
+/** Categorías del catálogo `categoria_problema` (las que acepta la BD). */
+export const CATEGORIAS_PROBLEMA: { valor: string; etiqueta: string }[] = [
+  { valor: 'calle',           etiqueta: 'Calle en mal estado' },
+  { valor: 'alumbrado',       etiqueta: 'Alumbrado público' },
+  { valor: 'agua',            etiqueta: 'Agua potable' },
+  { valor: 'cloaca',          etiqueta: 'Cloacas / desagües' },
+  { valor: 'residuos',        etiqueta: 'Residuos y limpieza' },
+  { valor: 'arbolado',        etiqueta: 'Arbolado' },
+  { valor: 'seguridad',       etiqueta: 'Seguridad' },
+  { valor: 'transito',        etiqueta: 'Tránsito y señalética' },
+  { valor: 'inundacion',      etiqueta: 'Inundación / anegamiento' },
+  { valor: 'ruido',           etiqueta: 'Ruido y molestias' },
+  { valor: 'espacio_publico', etiqueta: 'Espacio público' },
+  { valor: 'animales',        etiqueta: 'Animales sueltos' },
+  { valor: 'otro',            etiqueta: 'Otro' },
+];
+
+/** Categorías del catálogo `categoria_propuesta`. */
+export const CATEGORIAS_PROPUESTA: { valor: string; etiqueta: string }[] = [
+  { valor: 'calle',           etiqueta: 'Mejora de calle / vereda' },
+  { valor: 'alumbrado',       etiqueta: 'Alumbrado público' },
+  { valor: 'agua',            etiqueta: 'Agua' },
+  { valor: 'cloaca',          etiqueta: 'Cloaca' },
+  { valor: 'residuos',        etiqueta: 'Residuos' },
+  { valor: 'arbolado',        etiqueta: 'Arbolado / espacios verdes' },
+  { valor: 'seguridad',       etiqueta: 'Seguridad' },
+  { valor: 'transito',        etiqueta: 'Tránsito' },
+  { valor: 'espacio_publico', etiqueta: 'Espacio público' },
+  { valor: 'cultura',         etiqueta: 'Cultura' },
+  { valor: 'deporte',         etiqueta: 'Deporte' },
+  { valor: 'ambiente',        etiqueta: 'Medio ambiente' },
+  { valor: 'otro',            etiqueta: 'Otro' },
+];
+
+const ETIQUETA_POR_CATEGORIA = new Map<string, string>(
+  [...CATEGORIAS_PROBLEMA, ...CATEGORIAS_PROPUESTA].map((c) => [c.valor, c.etiqueta]),
+);
+
+export function etiquetaCategoria(valor: unknown): string {
+  return ETIQUETA_POR_CATEGORIA.get(String(valor ?? '')) ?? String(valor ?? '');
+}
+
+export function etiquetaEstado(valor: unknown): string {
+  return ESTADO_INFO.get(String(valor ?? ''))?.etiqueta ?? String(valor ?? '—');
+}
+
+/** «hace 3 días», «hace 2 meses»… para los listados tipo "últimos reclamos". */
+export function haceTiempo(iso: unknown): string {
+  const fecha = new Date(String(iso ?? ''));
+  if (Number.isNaN(fecha.getTime())) return '';
+  const s = Math.max(0, (Date.now() - fecha.getTime()) / 1000);
+  if (s < 3600) return `hace ${Math.max(1, Math.round(s / 60))} min`;
+  if (s < 86400) return `hace ${Math.round(s / 3600)} h`;
+  if (s < 30 * 86400) return `hace ${Math.round(s / 86400)} días`;
+  if (s < 365 * 86400) return `hace ${Math.round(s / (30 * 86400))} meses`;
+  return `hace ${Math.round(s / (365 * 86400))} años`;
+}
 
 /** Valores del atributo `tipo` de la tabla `calles`. */
 export const TIPO_ASFALTO = 1;
@@ -67,6 +155,15 @@ export const ETIQUETAS: Record<string, string> = {
   // Entradas al barrio
   Entradas_barrio: 'Tipo de acceso',
   longitud_m: 'Longitud (m)',
+  // Participación vecinal (problemas / propuestas)
+  titulo: 'Título',
+  descripcion: 'Descripción',
+  direccion: 'Dirección',
+  prioridad: 'Prioridad',
+  canal: 'Canal',
+  apoyos: 'Apoyos',
+  created_at: 'Creado',
+  resuelto_en: 'Resuelto el',
 };
 
 /** Escapa HTML para los popups (los properties vienen de la base de datos). */
