@@ -6,11 +6,8 @@ export default defineConfig({
   // GitHub Pages: https://juntavecinalantula.github.io/antulagis/
   base: '/antulagis/',
   plugins: [react()],
+  // Configuración para que el worker de MapLibre se cargue correctamente
   optimizeDeps: {
-    // maplibre-gl emite su worker como módulo aparte; el optimizador de Vite
-    // intenta pre-empaquetarlo y falla ("maplibre-gl-worker.mjs ... does not
-    // exist in the optimize deps directory"). Excluirlo evita ese warning y
-    // deja que el worker se resuelva tal cual lo publica la librería.
     exclude: ['maplibre-gl'],
   },
 })

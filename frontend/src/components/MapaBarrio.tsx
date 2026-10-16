@@ -205,6 +205,12 @@ export default function MapaBarrio({
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
     mapaRef.current = map;
 
+    // Redimensionar automáticamente ante cambios de layout o ventana
+    const ro = new ResizeObserver(() => {
+      map.resize();
+    });
+    ro.observe(cont);
+
     async function cargar(): Promise<void> {
       onEstado({ fase: 'cargando' });
       if (faltaConfig) {
