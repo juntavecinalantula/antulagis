@@ -151,7 +151,18 @@ function App() {
                 }}
                 ubicacion={ubicacion}
               />
-              <FormularioPropuesta onSuccess={() => setRefreshDatos((n) => n + 1)} />
+              <FormularioPropuesta
+                onSuccess={() => {
+                  setRefreshDatos((n) => n + 1);
+                  setUbicacion(null);
+                  setModoUbicacion(false);
+                }}
+                onIniciarUbicacion={() => {
+                  setModoUbicacion((v) => !v);
+                }}
+                ubicacion={ubicacion}
+                modoUbicacion={modoUbicacion}
+              />
             </div>
           )}
           {panelActivo === 'dashboard' && <VisualizacionDatos refreshKey={refreshDatos} />}

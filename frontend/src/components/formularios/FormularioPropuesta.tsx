@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { insforge } from '../../lib/insforgeClient';
+import { coordinatesToAddress } from '../../lib/geocoding';
 
 interface FormularioPropuestaProps {
   onSuccess?: () => void;
@@ -40,8 +41,30 @@ export const FormularioPropuesta: React.FC<FormularioPropuestaProps> = ({
   const [direccion, setDireccion] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [geocodingLoading, setGeocodingLoading] = useState(false);
+  const [geocodingError, setGeocodingError] = useState<string | null>(null);
 
-const handleSubmit = async (e: React.FormEvent) => {
+  // Obtener dirección a partir de coordenadas
+  const obtenerDireccionDesdeCoordenadas = async (lat: number, lng: number) => {
+    setGeocodingLoading(true);
+    setGeocodingError(null);
+    
+    try {
+      const address = await coordinatesToAddress(lat, lng);
+      if (address) {
+        setDireccion(address);
+      } else {
+        setGeocodingError('No se pudo obtener la dirección para estas coordenadas');
+      }
+    } catch (error) {
+      console.error('Error al obtener dirección:', error);
+      setGeocodingError('Error al obtener la dirección');
+    } finally {
+      setGeocodingLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     if (direccion.trim().length < 3 && !ubicacion) {
@@ -65,9 +88,9 @@ const handleSubmit = async (e: React.FormEvent) => {
       const { error } = await insforge.database.from('propuestas').insert([registro]);
       if (error) throw error;
       alert('Propuesta enviada exitosamente');
-      setifie('');
-      setDescripción('');
-      setDirección('');
+      setTitulo('');
+      setDescripcion('');
+      setDireccion('');
       onSuccess?.();
     } catch (err) {
       console.error(err);
@@ -111,6 +134,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           </option>
         ))}
       </select>
+      
       <input
         type="text"
         placeholder="Dirección o referencia de la zona"
@@ -120,6 +144,60 @@ const handleSubmit = async (e: React.FormEvent) => {
         minLength={3}
         required
       />
+
+      {/* Botón para obtener ubicación en el mapa */}
+      <div className="mb-4">
+        <button
+          type="button"
+          onClick={() => onIniciarUbicacion?.()}
+          className={`w-full rounded border border-dashed px-3 py-2 text-sm font-medium transition-colors mb-2 ${
+            modoUbicacion
+              ? 'border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100'
+              : 'border-dashed border-blue-400 bg-blue-50 text-blue-700 hover:bg-blue-100'
+          }`}
+        >
+          {modoUbicacion
+            ? ' ↳ Clickeá en el mapa para dejar el punto…'
+            : ubicacion
+            ? 'Cambiar ubicación en el mapa'
+            : 'Ubicar en el mapa (opcional, recomendado)'}
+        </button>
+        
+        {modoUbicacion && (
+          <p className="text-xs text-amber-700 mb-2">
+            Modo activo: elige el punto directamente sobre el mapa. Clickeá
+            otra vez el botón para cancelar.
+          </p>
+        )}
+        
+        {ubicacion && (
+          <div className="mb-3">
+            <p className="text-xs text-emerald-700 mb-2">
+              ✔ Ubicación elegida: {ubicacion[0].toFixed(5)}, {ubicacion[1].toFixed(5)}
+            </p>
+            
+            {/* Botón para obtener dirección automáticamente */}
+            <button
+              type="button"
+              onClick={() => obtenerDireccionDesdeCoordenadas(ubicacion[1], ubicacion[0])}
+              disabled={geocodingLoading}
+              className="w-full rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-400 mb-2"
+            >
+              {geocodingLoading ? 'Obteniendo dirección...' : 'Obtener dirección automáticamente'}
+            </button>
+            
+            {geocodingError && (
+              <p className="text-xs text-red-600 mb-2">{geocodingError}</p>
+            )}
+          </div>
+        )}
+        
+        {!direccion.trim() && !ubicacion && (
+          <p className="text-xs text-red-600">
+            Indicá una dirección o ubicá el punto en el mapa para poder georreferenciar la propuesta.
+          </p>
+        )}
+      </div>
 
       {errorMsg && (
         <p className="mb-3 text-sm text-red-600 break-words">{errorMsg}</p>
