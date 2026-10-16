@@ -40,6 +40,11 @@ function App() {
   const [filtroEstado, setFiltroEstado] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [refreshDatos, setRefreshDatos] = useState(0);
+  // Ubicación elegida en el mapa para el último formulario abierto.
+  const [ubicacion, setUbicacion] = useState<[number, number] | null>(null);
+  // Modo "esperando click en el mapa": cuando está activo, el mapa notifica
+  // cada click al padre en lugar de abrir un popup.
+  const [modoUbicacion, setModoUbicacion] = useState(false);
 
   /** Apoyar / retirar el apoyo a una propuesta desde el popup del mapa. */
   const apoyarPropuesta = async (id: number, apoyado: boolean) => {
@@ -72,6 +77,11 @@ function App() {
         filtros={{ estado: filtroEstado, categoria: filtroCategoria }}
         refreshKey={refreshDatos}
         onApoyarPropuesta={apoyarPropuesta}
+        modoUbicacion={modoUbicacion}
+        onUbicacionElegida={(lngLat) => {
+          setUbicacion(lngLat);
+          setModoUbicacion(false);
+        }}
       />
 
       <header className="absolute left-3 top-3 z-20 rounded-xl border border-slate-200 bg-white/95 px-4 py-2 shadow-lg backdrop-blur">
@@ -130,7 +140,17 @@ function App() {
           )}
           {panelActivo === 'reportar' && (
             <div className="flex flex-col gap-4">
-              <FormularioProblema onSuccess={() => setRefreshDatos((n) => n + 1)} />
+              <FormularioProblema
+                onSuccess={() => {
+                  setRefreshDatos((n) => n + 1);
+                  setUbicacion(null);
+                  setModoUbicacion(false);
+                }}
+                onIniciarUbicacion={() => {
+                  setModoUbicacion((v) => !v);
+                }}
+                ubicacion={ubicacion}
+              />
               <FormularioPropuesta onSuccess={() => setRefreshDatos((n) => n + 1)} />
             </div>
           )}

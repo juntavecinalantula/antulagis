@@ -8,6 +8,8 @@ interface FormularioProblemaProps {
   onIniciarUbicacion?: () => void;
   /** Ubicación elegida haciendo clic en el mapa (lng, lat). */
   ubicacion?: [number, number] | null;
+  /** true mientras el modo "ubicar en el mapa" está activo. */
+  modoUbicacion?: boolean;
 }
 
 // Categorías y prioridades reales de los catálogos `categoria_problema` y
@@ -18,6 +20,7 @@ export const FormularioProblema: React.FC<FormularioProblemaProps> = ({
   onSuccess,
   onIniciarUbicacion,
   ubicacion,
+  modoUbicacion = false,
 }) => {
   const [paso, setPaso] = useState(1);
   const [titulo, setTitulo] = useState('');
@@ -197,10 +200,24 @@ export const FormularioProblema: React.FC<FormularioProblemaProps> = ({
           <button
             type="button"
             onClick={() => onIniciarUbicacion?.()}
-            className="w-full rounded border border-dashed border-blue-400 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100"
+            className={`w-full rounded border border-dashed px-3 py-2 text-sm font-medium transition-colors ${
+              modoUbicacion
+                ? 'border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                : 'border-dashed border-blue-400 bg-blue-50 text-blue-700 hover:bg-blue-100'
+            }`}
           >
-            📍 {ubicacion ? 'Cambiar ubicación en el mapa' : 'Ubicar en el mapa (opcional, recomendado)'}
+            {modoUbicacion
+              ? ' ↳ Clickeá en el mapa para dejar el punto…'
+              : ubicacion
+              ? 'Cambiar ubicación en el mapa'
+              : 'Ubicar en el mapa (opcional, recomendado)'}
           </button>
+          {modoUbicacion && (
+            <p className="mt-2 text-xs text-amber-700">
+              Modo activo: elige el punto directamente sobre el mapa. Clickeá
+              otra vez el botón para cancelar.
+            </p>
+          )}
           {ubicacion && (
             <p className="mt-2 text-xs text-emerald-700">
               ✔ Ubicación elegida: {ubicacion[0].toFixed(5)}, {ubicacion[1].toFixed(5)}

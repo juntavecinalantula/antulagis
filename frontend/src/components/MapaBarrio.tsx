@@ -41,6 +41,10 @@ type Props = {
   refreshKey?: number;
   /** Callback del popup de propuestas: apoyar / retirar apoyo. */
   onApoyarPropuesta?: (id: number, apoyado: boolean) => void;
+  /** Cuando true, el siguiente click en el mapa elige la ubicación (no abre popup). */
+  modoUbicacion?: boolean;
+  /** Llamado con [lng, lat] cuando el usuario elige una ubicación en el mapa. */
+  onUbicacionElegida?: (ubicacion: [number, number]) => void;
 };
 
 /** Capas de MapLibre que conmuta cada checkbox. */
@@ -99,7 +103,16 @@ function expresionColorEstado(): maplibregl.ExpressionSpecification {
   return ['coalesce', ['match', ['get', 'estado'], ...steps, '#64748b']] as unknown as maplibregl.ExpressionSpecification;
 }
 
-export default function MapaBarrio({ visibles, base, onEstado, filtros, refreshKey = 0, onApoyarPropuesta }: Props) {
+export default function MapaBarrio({
+  visibles,
+  base,
+  onEstado,
+  filtros,
+  refreshKey = 0,
+  onApoyarPropuesta,
+  modoUbicacion = false,
+  onUbicacionElegida,
+}: Props) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaML | null>(null);
   const [capasListas, setCapasListas] = useState(false);
@@ -110,6 +123,10 @@ export default function MapaBarrio({ visibles, base, onEstado, filtros, refreshK
   filtrosRef.current = filtros;
   const apoyarRef = useRef(onApoyarPropuesta);
   apoyarRef.current = onApoyarPropuesta;
+  const modoUbicacionRef = useRef(modoUbicacion);
+  modoUbicacionRef.current = modoUbicacion;
+  const onUbicacionElegidaRef = useRef(onUbicacionElegida);
+  onUbicacionElegidaRef.current = onUbicacionElegida;
 
   /**
    * Carga problemas y propuestas georreferenciados aplicando los filtros de
@@ -359,6 +376,16 @@ export default function MapaBarrio({ visibles, base, onEstado, filtros, refreshK
             map.getCanvas().style.cursor = '';
           });
         }
+
+        // Modo "ubicar en el mapa": el siguiente click sobre el suelo (sin feature)
+        // elige la coordenada para el formulario activo. Se registra una sola vez
+        // aquí (no en cada capa) para que funcione fuera de los puntos existentes.
+        map.on('click', (e) => {
+          if (!modoUbicacionRef.current) return;
+          const feats = (e as unknown as { features?: unknown[] }).features;
+          if (feats && feats.length > 0) return; // click sobre un feature → popup
+          onUbicacionElegidaRef.current?.([e.lngLat.lng, e.lngLat.lat]);
+        });
 
         // Encuadre sobre el barrio (manzanas + calles; los cauces se extienden más al norte)
         const bb = bboxDeFCs([fcManzanas, fcCalles]);
