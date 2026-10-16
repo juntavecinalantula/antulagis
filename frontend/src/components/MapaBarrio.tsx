@@ -96,7 +96,7 @@ function contenidoPopup(
 function expresionColorEstado(): maplibregl.ExpressionSpecification {
   const steps: unknown[] = [];
   for (const e of ESTADOS_REPORTE) steps.push(e.valor, e.color);
-  return ['coalesce', ['match', ['get', 'estado'], ...steps, '#64748b']] as maplibregl.ExpressionSpecification;
+  return ['coalesce', ['match', ['get', 'estado'], ...steps, '#64748b']] as unknown as maplibregl.ExpressionSpecification;
 }
 
 export default function MapaBarrio({ visibles, base, onEstado, filtros, refreshKey = 0, onApoyarPropuesta }: Props) {
@@ -336,7 +336,6 @@ export default function MapaBarrio({ visibles, base, onEstado, filtros, refreshK
             'circle-color': 'rgba(0,0,0,0)',
             'circle-stroke-color': '#16a34a',
             'circle-stroke-width': 1.5,
-            'circle-stroke-dasharray': [0.2, 0.4],
           },
         });
 

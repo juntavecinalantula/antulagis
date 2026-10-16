@@ -5,15 +5,18 @@ import { FormularioProblema } from './components/formularios/FormularioProblema'
 import { FormularioPropuesta } from './components/formularios/FormularioPropuesta';
 import { PanelFiltros } from './components/filtros/PanelFiltros';
 import { VisualizacionDatos } from './components/visualizacion/VisualizacionDatos';
+import { PanelSeguimiento } from './components/visualizacion/PanelSeguimiento';
+import { insforge } from './lib/insforgeClient';
 import type { CapasVisibles } from './lib/datos';
 import type { BaseId } from './lib/baseMap';
 
-type PanelId = 'capas' | 'filtros' | 'reportar' | 'dashboard';
+type PanelId = 'capas' | 'filtros' | 'reportar' | 'seguimiento' | 'dashboard';
 
 const PESTANAS: { id: PanelId; nombre: string }[] = [
   { id: 'capas', nombre: 'Capas' },
   { id: 'filtros', nombre: 'Filtros' },
   { id: 'reportar', nombre: 'Reportar' },
+  { id: 'seguimiento', nombre: 'Seguimiento' },
   { id: 'dashboard', nombre: 'Datos' },
 ];
 
@@ -26,6 +29,8 @@ function App() {
     informacion: true,
     luminaria: true,
     entradas: true,
+    problemas: true,
+    propuestas: true,
   });
   const [base, setBase] = useState<BaseId>('osm');
   const [estado, setEstado] = useState<EstadoMapa>({ fase: 'cargando' });
@@ -36,6 +41,22 @@ function App() {
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [refreshDatos, setRefreshDatos] = useState(0);
 
+  /** Apoyar / retirar el apoyo a una propuesta desde el popup del mapa. */
+  const apoyarPropuesta = async (id: number, apoyado: boolean) => {
+    try {
+      if (apoyado) {
+        await insforge.database.from('propuestas_apoyos').delete().eq('propuesta_id', id);
+      } else {
+        await insforge.database
+          .from('propuestas_apoyos')
+          .insert({ rows: [{ propuesta_id: id }] });
+      }
+      setRefreshDatos((n) => n + 1);
+    } catch (e) {
+      console.error('apoyar propuesta', e);
+    }
+  };
+
   const abrirPestana = (id: PanelId) => {
     setPanelActivo(id);
     setPanelAbierto(true);
@@ -43,7 +64,15 @@ function App() {
 
   return (
     <div className="fixed inset-0 font-sans text-slate-900 bg-slate-50">
-      <MapaBarrio key={intento} visibles={visibles} base={base} onEstado={setEstado} />
+      <MapaBarrio
+        key={intento}
+        visibles={visibles}
+        base={base}
+        onEstado={setEstado}
+        filtros={{ estado: filtroEstado, categoria: filtroCategoria }}
+        refreshKey={refreshDatos}
+        onApoyarPropuesta={apoyarPropuesta}
+      />
 
       <header className="absolute left-3 top-3 z-20 rounded-xl border border-slate-200 bg-white/95 px-4 py-2 shadow-lg backdrop-blur">
         <h1 className="text-sm font-bold leading-tight sm:text-base">MAMA ANTULA</h1>
@@ -106,6 +135,13 @@ function App() {
             </div>
           )}
           {panelActivo === 'dashboard' && <VisualizacionDatos refreshKey={refreshDatos} />}
+          {panelActivo === 'seguimiento' && (
+            <PanelSeguimiento
+              filtroEstado={filtroEstado}
+              filtroCategoria={filtroCategoria}
+              refreshKey={refreshDatos}
+            />
+          )}
         </aside>
       )}
 

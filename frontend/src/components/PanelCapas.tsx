@@ -50,7 +50,7 @@ export default function PanelCapas({
           // El porcentaje se muestra únicamente en las dos filas de calles
           const pct =
             conteos && CAPAS_CON_PORCENTAJE.includes(id)
-              ? `${porcentaje(conteos[id], conteos.calles)}%`
+              ? `${porcentaje(conteos[id] ?? 0, conteos.calles)}%`
               : null;
           return (
             <li key={id} className="flex items-center gap-2">
@@ -65,7 +65,7 @@ export default function PanelCapas({
                 {nombre}
               </label>
               <span className="whitespace-nowrap tabular-nums text-xs text-slate-400">
-                {pct ?? (conteos ? conteos[id] : '—')}
+                {pct ?? (conteos ? (conteos[id] ?? '—') : '—')}
               </span>
             </li>
           );

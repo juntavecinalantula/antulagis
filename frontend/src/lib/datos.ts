@@ -13,6 +13,9 @@ export type Conteos = {
   informacion: number;
   luminaria: number;
   entradas: number;
+  /** Reportes vecinales georreferenciados (0 si la consulta aún no está cableada). */
+  problemas?: number;
+  propuestas?: number;
 };
 
 /** Estado de visibilidad de cada capa del visor. */
@@ -158,7 +161,6 @@ export const ETIQUETAS: Record<string, string> = {
   direccion: 'Dirección',
   prioridad: 'Prioridad',
   canal: 'Canal',
-  codigo: 'Código de seguimiento',
   apoyos: 'Apoyos',
   created_at: 'Creado',
   resuelto_en: 'Resuelto el',
