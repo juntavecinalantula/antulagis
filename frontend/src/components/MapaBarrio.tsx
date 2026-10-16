@@ -377,13 +377,16 @@ export default function MapaBarrio({
           });
         }
 
-        // Modo "ubicar en el mapa": el siguiente click sobre el suelo (sin feature)
-        // elige la coordenada para el formulario activo. Se registra una sola vez
-        // aquí (no en cada capa) para que funcione fuera de los puntos existentes.
+        // Modo "ubicar en el mapa": el siguiente click sobre el suelo elige la coordenada
+        // para el formulario activo. Se registra a nivel de mapa (no por capa)
+        // para que funcione fuera de los puntos existentes. Si el click cae sobre
+        // una feature visible, se respeta el popup de esa capa y no se elige punto.
         map.on('click', (e) => {
           if (!modoUbicacionRef.current) return;
-          const feats = (e as unknown as { features?: unknown[] }).features;
-          if (feats && feats.length > 0) return; // click sobre un feature → popup
+          const bajoAlgunaCapa = map
+            .queryRenderedFeatures([e.lngLat.lng, e.lngLat.lat])
+            .some((f) => !!f.layer && CAPAS_CON_POPUP.includes(f.layer.id));
+          if (bajoAlgunaCapa) return;
           onUbicacionElegidaRef.current?.([e.lngLat.lng, e.lngLat.lat]);
         });
 
