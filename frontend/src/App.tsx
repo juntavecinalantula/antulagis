@@ -69,25 +69,26 @@ function App() {
   };
 
   return (
-    <div className="fixed inset-0 font-sans text-slate-900 bg-slate-50 flex flex-col sm:flex-row">
-      <MapaBarrio
-        key={intento}
-        visibles={visibles}
-        base={base}
-        onEstado={setEstado}
-        filtros={{ estado: filtroEstado, categoria: filtroCategoria }}
-        modoMapa={modoMapa}
-        refreshKey={refreshDatos}
-        onApoyarPropuesta={apoyarPropuesta}
-        modoUbicacion={modoUbicacion}
-        onUbicacionElegida={(lngLat) => {
-          setUbicacion(lngLat);
-          setModoUbicacion(false);
-        }}
-      />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="relative w-[500px] h-[400px] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col">
+        <MapaBarrio
+          key={intento}
+          visibles={visibles}
+          base={base}
+          onEstado={setEstado}
+          filtros={{ estado: filtroEstado, categoria: filtroCategoria }}
+          modoMapa={modoMapa}
+          refreshKey={refreshDatos}
+          onApoyarPropuesta={apoyarPropuesta}
+          modoUbicacion={modoUbicacion}
+          onUbicacionElegida={(lngLat) => {
+            setUbicacion(lngLat);
+            setModoUbicacion(false);
+          }}
+        />
 
-      {/* Header flotante superior (móvil) o barra lateral (desktop) */}
-      <div className="absolute left-3 top-3 z-30 flex items-center gap-3">
+        {/* Header flotante superior (dentro del mapa) */}
+        <div className="absolute left-3 top-3 z-30 flex items-center gap-3">
         <header className="rounded-xl border border-slate-200 bg-white/95 px-4 py-2 shadow-lg backdrop-blur flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">M</div>
           <div>
@@ -224,6 +225,7 @@ function App() {
           </button>
         </div>
       )}
+      </div>
     </div>
   );
 }
