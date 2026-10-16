@@ -1,1 +1,23 @@
+# Dependencias y artefactos de build
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# Entornos locales / credenciales (NUNCA subir)
+.env
+.env.*
+!.env.example
+
+# Bases de datos locales y respaldos
+*.gpkg-*
+*.bak
+*.sqlite
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# Artefactos de trabajo local
 *.bundle
