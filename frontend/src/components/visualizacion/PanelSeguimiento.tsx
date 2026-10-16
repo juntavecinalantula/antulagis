@@ -120,10 +120,13 @@ export const PanelSeguimiento: React.FC<Props> = ({
   }, [historial]);
 
   return (
-    <div className="p-4 bg-white shadow rounded mb-4">
+    <div className="p-4 bg-white/95 backdrop-blur shadow-lg rounded-2xl border border-slate-200 mb-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-md font-bold">Seguimiento de reportes</h3>
-        {loading && <span className="text-xs text-gray-400">Actualizando…</span>}
+        <div>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Seguimiento de reportes</h3>
+          <p className="text-xs text-slate-500">Historial y trazabilidad pública</p>
+        </div>
+        {loading && <span className="text-xs text-blue-600 font-medium animate-pulse">Actualizando…</span>}
       </div>
 
       {error && <p className="mb-3 text-sm text-red-600 break-words">{error}</p>}

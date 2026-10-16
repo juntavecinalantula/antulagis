@@ -43,8 +43,8 @@ export default function PanelCapas({
     onVisibles({ ...visibles, [capa]: checked });
 
   return (
-    <div className="p-4 bg-white shadow rounded mb-4">
-      <h3 className="text-md font-bold mb-3 text-slate-800">Capas del mapa</h3>
+    <div className="p-4 bg-white/95 backdrop-blur shadow-lg rounded-2xl border border-slate-200 mb-4">
+      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3">Capas del mapa</h3>
       <ul className="space-y-1.5 text-sm">
         {CAPAS.map(({ id, nombre }) => {
           // El porcentaje se muestra únicamente en las dos filas de calles

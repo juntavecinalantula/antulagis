@@ -19,8 +19,8 @@ export const PanelFiltros: React.FC<PanelFiltrosProps> = ({
 }) => {
   const hayFiltros = filtroEstado !== '' || filtroCategoria !== '';
   return (
-    <div className="p-4 bg-white shadow rounded mb-4">
-      <h3 className="text-md font-bold mb-1">Filtros de búsqueda</h3>
+    <div className="p-4 bg-white/95 backdrop-blur shadow-lg rounded-2xl border border-slate-200 mb-4">
+      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-1">Filtros de búsqueda</h3>
       <p className="mb-3 text-xs text-slate-500">
         Afectan a los puntos de problemas y propuestas del mapa y al panel de seguimiento.
       </p>

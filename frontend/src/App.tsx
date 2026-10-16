@@ -39,6 +39,7 @@ function App() {
   const [panelAbierto, setPanelAbierto] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
+  const [modoMapa, setModoMapa] = useState<'puntos' | 'calor'>('puntos');
   const [refreshDatos, setRefreshDatos] = useState(0);
   // Ubicación elegida en el mapa para el último formulario abierto.
   const [ubicacion, setUbicacion] = useState<[number, number] | null>(null);
@@ -68,13 +69,14 @@ function App() {
   };
 
   return (
-    <div className="fixed inset-0 font-sans text-slate-900 bg-slate-50">
+    <div className="fixed inset-0 font-sans text-slate-900 bg-slate-50 flex flex-col sm:flex-row">
       <MapaBarrio
         key={intento}
         visibles={visibles}
         base={base}
         onEstado={setEstado}
         filtros={{ estado: filtroEstado, categoria: filtroCategoria }}
+        modoMapa={modoMapa}
         refreshKey={refreshDatos}
         onApoyarPropuesta={apoyarPropuesta}
         modoUbicacion={modoUbicacion}
@@ -84,20 +86,31 @@ function App() {
         }}
       />
 
-      <header className="absolute left-3 top-3 z-20 rounded-xl border border-slate-200 bg-white/95 px-4 py-2 shadow-lg backdrop-blur">
-        <h1 className="text-sm font-bold leading-tight sm:text-base">MAMA ANTULA</h1>
-        <p className="text-xs text-slate-500">Gestión Vecinal</p>
-      </header>
-
-      {/* Menú de navegación principal (arriba a la derecha) */}
-      <nav className="absolute right-3 top-3 z-20 flex flex-col items-stretch gap-2">
+      {/* Header flotante superior (móvil) o barra lateral (desktop) */}
+      <div className="absolute left-3 top-3 z-30 flex items-center gap-3">
+        <header className="rounded-xl border border-slate-200 bg-white/95 px-4 py-2 shadow-lg backdrop-blur flex items-center gap-3">
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">M</div>
+          <div>
+            <h1 className="text-sm font-bold leading-tight sm:text-base tracking-tight">MAMA ANTULA</h1>
+            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Gestión Vecinal</p>
+          </div>
+        </header>
+        
         <button
           type="button"
           onClick={() => setPanelAbierto((v) => !v)}
-          className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="rounded-xl bg-white border border-slate-200 p-2.5 text-slate-600 shadow-lg hover:bg-slate-50 focus:outline-none"
         >
-          {panelAbierto ? 'Ocultar panel' : 'Mostrar panel'}
+          {panelAbierto ? (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
+          ) : (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
+          )}
         </button>
+      </div>
+
+      {/* Navegación de Pestañas (Munify style: pill toggles) */}
+      <nav className="absolute right-3 top-3 z-30 flex bg-white/90 backdrop-blur p-1.5 rounded-xl border border-slate-200 shadow-lg gap-1">
         {PESTANAS.map(({ id, nombre }) => {
           const activo = panelActivo === id;
           return (
@@ -105,11 +118,10 @@ function App() {
               key={id}
               type="button"
               onClick={() => abrirPestana(id)}
-              aria-pressed={activo}
-              className={`rounded-lg px-3 py-2 text-sm font-medium shadow transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
                 activo
-                  ? 'bg-slate-800 text-white'
-                  : 'bg-white text-slate-700 hover:bg-slate-100'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-500 hover:bg-slate-100'
               }`}
             >
               {nombre}
@@ -118,9 +130,25 @@ function App() {
         })}
       </nav>
 
-      {/* Panel de contenido dinámico (izquierda, debajo del encabezado) */}
+      {/* Switch de Modo Mapa (Puntos vs Calor) */}
+      <div className="absolute right-3 bottom-8 z-30 flex bg-white/90 backdrop-blur p-1 rounded-xl border border-slate-200 shadow-lg">
+        <button
+          onClick={() => setModoMapa('puntos')}
+          className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all ${modoMapa === 'puntos' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+        >
+          Puntos
+        </button>
+        <button
+          onClick={() => setModoMapa('calor')}
+          className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all ${modoMapa === 'calor' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+        >
+          Calor
+        </button>
+      </div>
+
+      {/* Panel de contenido dinámico (Munify style: sidebar) */}
       {panelAbierto && (
-        <aside className="absolute left-3 top-20 z-10 w-80 max-w-[calc(100vw-1.5rem)] max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain">
+        <aside className="absolute left-3 top-20 z-20 w-80 max-w-[calc(100vw-1.5rem)] max-h-[calc(100vh-6.5rem)] overflow-y-auto overscroll-contain flex flex-col gap-3 pb-4 scrollbar-hide">
           {panelActivo === 'capas' && (
             <PanelCapas
               visibles={visibles}

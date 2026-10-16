@@ -37,6 +37,8 @@ type Props = {
   base: BaseId;
   onEstado: (estado: EstadoMapa) => void;
   filtros?: FiltroReportes;
+  /** Modo de visualización: puntos individuales o mapa de calor de concentración */
+  modoMapa?: 'puntos' | 'calor';
   /** Cambia para recargar problemas/propuestas tras un nuevo reporte. */
   refreshKey?: number;
   /** Callback del popup de propuestas: apoyar / retirar apoyo. */
@@ -110,6 +112,7 @@ export default function MapaBarrio({
   base,
   onEstado,
   filtros,
+  modoMapa = 'puntos',
   refreshKey = 0,
   onApoyarPropuesta,
   modoUbicacion = false,
@@ -363,6 +366,30 @@ export default function MapaBarrio({
             'circle-opacity': 0.92,
           },
         });
+        // Capa de calor (estilo mapa de calor Munify: densidad de reclamos)
+        map.addLayer({
+          id: 'problemas-heat',
+          type: 'heatmap',
+          source: 'problemas',
+          layout: { visibility: 'none' },
+          paint: {
+            'heatmap-weight': 1,
+            'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 11, 1, 15, 3],
+            'heatmap-color': [
+              'interpolate',
+              ['linear'],
+              ['heatmap-density'],
+              0, 'rgba(33,102,172,0)',
+              0.2, 'rgb(103,169,207)',
+              0.4, 'rgb(209,229,240)',
+              0.6, 'rgb(253,219,199)',
+              0.8, 'rgb(239,138,98)',
+              1, 'rgb(178,24,43)',
+            ],
+            'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 11, 15, 17, 30],
+            'heatmap-opacity': 0.85,
+          },
+        });
         map.addLayer({
           id: 'propuestas-circle',
           type: 'circle',
@@ -514,7 +541,11 @@ export default function MapaBarrio({
     if (map.getLayer('propuestas-ring')) {
       map.setLayoutProperty('propuestas-ring', 'visibility', visibles.propuestas ? 'visible' : 'none');
     }
-  }, [visibles, capasListas]);
+    // Controlar visibilidad de capa de calor según modoMapa
+    if (map.getLayer('problemas-heat')) {
+      map.setLayoutProperty('problemas-heat', 'visibility', modoMapa === 'calor' ? 'visible' : 'none');
+    }
+  }, [visibles, capasListas, modoMapa]);
 
   // Recargar reportes vecinales cuando cambian los filtros o se refresca (nuevo reporte)
   useEffect(() => {
