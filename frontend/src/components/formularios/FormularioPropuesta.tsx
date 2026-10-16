@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { insforge } from '../../lib/insforgeClient';
 import { coordinatesToAddress } from '../../lib/geocoding';
 
@@ -63,6 +63,13 @@ export const FormularioPropuesta: React.FC<FormularioPropuestaProps> = ({
       setGeocodingLoading(false);
     }
   };
+
+  // Auto-reverse geocode when ubicacion prop changes
+  useEffect(() => {
+    if (ubicacion) {
+      void obtenerDireccionDesdeCoordenadas(ubicacion[1], ubicacion[0]);
+    }
+  }, [ubicacion]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

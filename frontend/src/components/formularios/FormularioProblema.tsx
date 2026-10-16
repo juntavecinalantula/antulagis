@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { insforge } from '../../lib/insforgeClient';
 import { CATEGORIAS_PROBLEMA, PRIORIDADES } from '../../lib/datos';
 import { coordinatesToAddress } from '../../lib/geocoding';
@@ -53,6 +53,13 @@ export const FormularioProblema: React.FC<FormularioProblemaProps> = ({
       setGeocodingLoading(false);
     }
   };
+
+  // Auto-reverse geocode when ubicacion prop changes
+  useEffect(() => {
+    if (ubicacion) {
+      void obtenerDireccionDesdeCoordenadas(ubicacion[1], ubicacion[0]);
+    }
+  }, [ubicacion]);
 
   const puedeAvanzar =
     (paso === 1 && titulo.trim().length >= 3 && descripcion.trim().length >= 10) ||

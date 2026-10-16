@@ -45,6 +45,8 @@ type Props = {
   modoUbicacion?: boolean;
   /** Llamado con [lng, lat] cuando el usuario elige una ubicación en el mapa. */
   onUbicacionElegida?: (ubicacion: [number, number]) => void;
+  /** Ubicación elegida actualmente para mostrar pin selector en el mapa. */
+  ubicacion?: [number, number] | null;
 };
 
 /** Capas de MapLibre que conmuta cada checkbox. */
@@ -127,6 +129,36 @@ export default function MapaBarrio({
   modoUbicacionRef.current = modoUbicacion;
   const onUbicacionElegidaRef = useRef(onUbicacionElegida);
   onUbicacionElegidaRef.current = onUbicacionElegida;
+  const markerRef = useRef<maplibregl.Marker | null>(null);
+
+  // Manejar el marker de ubicación elegida
+  useEffect(() => {
+    const map = mapaRef.current;
+    if (!map) return;
+    // Access props through arguments as fallback
+    const propsObj = arguments[0];
+    if (propsObj && propsObj.ubicacion) {
+      if (!markerRef.current) {
+        markerRef.current = new maplibregl.Marker({ color: '#2563eb' })
+          .setLngLat(propsObj.ubicacion)
+          .addTo(map);
+      } else {
+        markerRef.current.setLngLat(propsObj.ubicacion);
+      }
+    } else if (markerRef.current) {
+      markerRef.current.remove();
+      markerRef.current = null;
+    }
+  }, [arguments[0]?.ubicacion]);
+
+  // Cursor tipo crosshair cuando está activado el modo ubicación
+  useEffect(() => {
+    const map = mapaRef.current;
+    if (!map) return;
+    // Access props through arguments as fallback
+    const propsObj = arguments[0];
+    map.getCanvas().style.cursor = propsObj && propsObj.modoUbicacion ? 'crosshair' : '';
+  }, [arguments[0]?.modoUbicacion]);
 
   /**
    * Carga problemas y propuestas georreferenciados aplicando los filtros de
@@ -362,6 +394,7 @@ export default function MapaBarrio({
         // Popups + cursor puntero en todas las capas clicables
         for (const id of CAPAS_CON_POPUP) {
           map.on('click', id, (e) => {
+            if (modoUbicacionRef.current) return;
             const f = e.features?.[0];
             if (!f) return;
             new maplibregl.Popup()
@@ -370,23 +403,18 @@ export default function MapaBarrio({
               .addTo(map);
           });
           map.on('mouseenter', id, () => {
+            if (modoUbicacionRef.current) return;
             map.getCanvas().style.cursor = 'pointer';
           });
           map.on('mouseleave', id, () => {
+            if (modoUbicacionRef.current) return;
             map.getCanvas().style.cursor = '';
           });
         }
 
-        // Modo "ubicar en el mapa": el siguiente click sobre el suelo elige la coordenada
-        // para el formulario activo. Se registra a nivel de mapa (no por capa)
-        // para que funcione fuera de los puntos existentes. Si el click cae sobre
-        // una feature visible, se respeta el popup de esa capa y no se elige punto.
+        // Modo "ubicar en el mapa": clic en cualquier lugar del mapa elige la coordenada
         map.on('click', (e) => {
           if (!modoUbicacionRef.current) return;
-          const bajoAlgunaCapa = map
-            .queryRenderedFeatures([e.lngLat.lng, e.lngLat.lat])
-            .some((f) => !!f.layer && CAPAS_CON_POPUP.includes(f.layer.id));
-          if (bajoAlgunaCapa) return;
           onUbicacionElegidaRef.current?.([e.lngLat.lng, e.lngLat.lat]);
         });
 
