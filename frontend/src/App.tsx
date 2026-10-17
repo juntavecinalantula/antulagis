@@ -70,8 +70,18 @@ function App() {
   };
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all duration-300 ${maximizado ? 'p-0 bg-transparent' : 'p-4'}`}>
-      <div className={`relative bg-white transition-all duration-300 overflow-hidden flex flex-col ${maximizado ? 'w-full h-full rounded-none shadow-none' : 'w-[850px] h-[600px] rounded-2xl shadow-2xl border border-slate-200'}`}>
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-300 ${
+        maximizado ? 'p-0 bg-transparent' : 'p-3 sm:p-6 bg-slate-900/60 backdrop-blur-sm'
+      }`}
+    >
+      <div
+        className={`relative bg-white transition-all duration-300 overflow-hidden flex flex-col ${
+          maximizado
+            ? 'w-full h-full rounded-none shadow-none border-0'
+            : 'w-full max-w-5xl h-[75vh] min-h-[480px] max-h-[720px] rounded-2xl shadow-2xl border border-slate-200'
+        }`}
+      >
         <MapaBarrio
           key={intento}
           visibles={visibles}
@@ -89,68 +99,99 @@ function App() {
         />
 
         {/* Header flotante superior (dentro del mapa) */}
-        <div className="absolute left-3 top-3 z-30 flex items-center gap-3">
-        <header className="rounded-xl border border-slate-200 bg-white/95 px-4 py-2 shadow-lg backdrop-blur flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">M</div>
-          <div>
-            <h1 className="text-sm font-bold leading-tight sm:text-base tracking-tight">MAMA ANTULA</h1>
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Gestión Vecinal</p>
-          </div>
-        </header>
-        
-        <button
-          type="button"
-          onClick={() => setPanelAbierto((v) => !v)}
-          className="rounded-xl bg-white border border-slate-200 p-2.5 text-slate-600 shadow-lg hover:bg-slate-50 focus:outline-none"
-        >
-          {panelAbierto ? (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
-          ) : (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
-          )}
-        </button>
-      </div>
+        <div className="absolute left-3 top-3 z-30 flex items-center gap-2">
+          <header className="rounded-xl border border-slate-200 bg-white/95 px-3 py-1.5 shadow-lg backdrop-blur flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">M</div>
+            <div>
+              <h1 className="text-sm font-bold leading-tight tracking-tight">MAMA ANTULA</h1>
+              <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Gestión Vecinal</p>
+            </div>
+          </header>
 
-      {/* Navegación de Pestañas (Munify style: pill toggles) */}
-      <nav className="absolute right-3 top-3 z-30 flex bg-white/90 backdrop-blur p-1.5 rounded-xl border border-slate-200 shadow-lg gap-1">
-        {PESTANAS.map(({ id, nombre }) => {
-          const activo = panelActivo === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => abrirPestana(id)}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                activo
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-500 hover:bg-slate-100'
-              }`}
-            >
-              {nombre}
-            </button>
-          );
-        })}
-      </nav>
+          <button
+            type="button"
+            onClick={() => setPanelAbierto((v) => !v)}
+            title={panelAbierto ? 'Ocultar panel' : 'Mostrar panel'}
+            className="rounded-xl bg-white border border-slate-200 p-2 text-slate-600 shadow-lg hover:bg-slate-50 focus:outline-none"
+          >
+            {panelAbierto ? (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
+            )}
+          </button>
+        </div>
 
-      {/* Switch de Modo Mapa (Puntos vs Calor) */}
-      <div className="absolute right-3 bottom-8 z-30 flex bg-white/90 backdrop-blur p-1 rounded-xl border border-slate-200 shadow-lg">
-        <button
-          onClick={() => setModoMapa('puntos')}
-          className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all ${modoMapa === 'puntos' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
-        >
-          Puntos
-        </button>
-        <button
-          onClick={() => setModoMapa('calor')}
-          className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all ${modoMapa === 'calor' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
-        >
-          Calor
-        </button>
-      </div>
+        {/* Navegación de Pestañas (Munify style: pill toggles) */}
+        <nav className="absolute right-3 top-3 z-30 flex items-center bg-white/95 backdrop-blur p-1.5 rounded-xl border border-slate-200 shadow-lg gap-1">
+          {PESTANAS.map(({ id, nombre }) => {
+            const activo = panelActivo === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => abrirPestana(id)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  activo
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-slate-500 hover:bg-slate-100'
+                }`}
+              >
+                {nombre}
+              </button>
+            );
+          })}
 
-      {/* Panel de contenido dinámico (Munify style: sidebar) */}
-      {panelAbierto && (
-        <aside className="absolute left-3 top-20 z-20 w-80 max-w-[calc(100vw-1.5rem)] max-h-[calc(100vh-6.5rem)] overflow-y-auto overscroll-contain flex flex-col gap-3 pb-4 scrollbar-hide">
+          <div className="h-4 w-px bg-slate-200 mx-1 hidden sm:block" />
+
+          {/* Botón Maximizar / Restaurar estilo Munify */}
+          <button
+            type="button"
+            onClick={() => setMaximizado((v) => !v)}
+            title={maximizado ? 'Restaurar ventana' : 'Maximizar a pantalla completa'}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all border ${
+              maximizado
+                ? 'bg-slate-800 text-white border-slate-800 hover:bg-slate-900 shadow-sm'
+                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-blue-600'
+            }`}
+          >
+            {maximizado ? (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 14h6m0 0v6m0-6L3 21m17-7h-6m0 0v6m0-6l7 7M10 10V4m0 6H4m6 0L3 3m10 7V4m0 6h6m-6 0l7-7" />
+                </svg>
+                <span className="hidden sm:inline">Restaurar</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+                <span className="hidden sm:inline">Maximizar</span>
+              </>
+            )}
+          </button>
+        </nav>
+
+        {/* Switch de Modo Mapa (Puntos vs Calor) */}
+        <div className="absolute right-3 bottom-8 z-30 flex bg-white/90 backdrop-blur p-1 rounded-xl border border-slate-200 shadow-lg">
+          <button
+            onClick={() => setModoMapa('puntos')}
+            className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all ${modoMapa === 'puntos' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+          >
+            Puntos
+          </button>
+          <button
+            onClick={() => setModoMapa('calor')}
+            className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all ${modoMapa === 'calor' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+          >
+            Calor
+          </button>
+        </div>
+
+        {/* Panel de contenido dinámico (Munify style: sidebar) */}
+        {panelAbierto && (
+          <aside className="absolute left-3 top-20 z-20 w-80 max-w-[calc(100vw-1.5rem)] max-h-[calc(100%-5.5rem)] overflow-y-auto overscroll-contain flex flex-col gap-3 pb-4 scrollbar-hide">
           {panelActivo === 'capas' && (
             <PanelCapas
               visibles={visibles}
