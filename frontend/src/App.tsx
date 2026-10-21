@@ -1,26 +1,21 @@
 import { useState } from 'react';
-import MapaBarrio, { type EstadoMapa } from './components/MapaBarrio';
-import PanelCapas from './components/PanelCapas';
-import { FormularioProblema } from './components/formularios/FormularioProblema';
-import { FormularioPropuesta } from './components/formularios/FormularioPropuesta';
-import { PanelFiltros } from './components/filtros/PanelFiltros';
-import { VisualizacionDatos } from './components/visualizacion/VisualizacionDatos';
-import { PanelSeguimiento } from './components/visualizacion/PanelSeguimiento';
-import { insforge } from './lib/insforgeClient';
+import { Sidebar } from './components/Sidebar';
+import MapaBarrio from './components/MapaBarrio';
 import type { CapasVisibles } from './lib/datos';
 import type { BaseId } from './lib/baseMap';
 
-type PanelId = 'capas' | 'filtros' | 'reportar' | 'seguimiento' | 'dashboard';
+// Placeholder de vistas futuras
+const Vistas: Record<string, JSX.Element> = {
+  tablero: <div className="p-6">Tablero de Gestión (Pendiente)</div>,
+  mapa: <div className="h-full w-full">Mapa</div>,
+  reclamos: <div className="p-6">Reclamos Vecinales (Pendiente)</div>,
+  configuracion: <div className="p-6">Configuración (Pendiente)</div>,
+};
 
-const PESTANAS: { id: PanelId; nombre: string }[] = [
-  { id: 'capas', nombre: 'Capas' },
-  { id: 'filtros', nombre: 'Filtros' },
-  { id: 'reportar', nombre: 'Reportar' },
-  { id: 'seguimiento', nombre: 'Seguimiento' },
-  { id: 'dashboard', nombre: 'Datos' },
-];
+type ViewMode = 'tablero' | 'mapa' | 'reclamos' | 'obras' | 'catastro' | 'asistente' | 'configuracion';
 
-function App() {
+export default function App() {
+  const [currentView, setCurrentView] = useState<ViewMode>('tablero');
   const [visibles, setVisibles] = useState<CapasVisibles>({
     manzanas: true,
     callesAsfalto: true,
@@ -33,241 +28,36 @@ function App() {
     propuestas: true,
   });
   const [base, setBase] = useState<BaseId>('osm');
-  const [estado, setEstado] = useState<EstadoMapa>({ fase: 'cargando' });
-  const [intento, setIntento] = useState(0);
-  const [panelActivo, setPanelActivo] = useState<PanelId>('capas');
-  const [panelAbierto, setPanelAbierto] = useState(true);
-  const [filtroEstado, setFiltroEstado] = useState('');
-  const [filtroCategoria, setFiltroCategoria] = useState('');
-  const [modoMapa, setModoMapa] = useState<'puntos' | 'calor'>('puntos');
-  const [refreshDatos, setRefreshDatos] = useState(0);
-  // Ubicación elegida en el mapa para el último formulario abierto.
-  const [ubicacion, setUbicacion] = useState<[number, number] | null>(null);
-  // Modo "esperando click en el mapa": cuando está activo, el mapa notifica
-  // cada click al padre en lugar de abrir un popup.
-  const [modoUbicacion, setModoUbicacion] = useState(false);
-  const [maximizado, setMaximizado] = useState(false);
-
-  /** Apoyar / retirar el apoyo a una propuesta desde el popup del mapa. */
-  const apoyarPropuesta = async (id: number, apoyado: boolean) => {
-    try {
-      if (apoyado) {
-        await insforge.database.from('propuestas_apoyos').delete().eq('propuesta_id', id);
-      } else {
-        await insforge.database
-          .from('propuestas_apoyos')
-          .insert({ rows: [{ propuesta_id: id }] });
-      }
-      setRefreshDatos((n) => n + 1);
-    } catch (e) {
-      console.error('apoyar propuesta', e);
-    }
-  };
-
-  const abrirPestana = (id: PanelId) => {
-    setPanelActivo(id);
-    setPanelAbierto(true);
-  };
 
   return (
-    <div
-      className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-300 ${
-        maximizado ? 'p-0 bg-transparent' : 'p-3 sm:p-6 bg-slate-900/60 backdrop-blur-sm'
-      }`}
-    >
-      <div
-        className={`relative bg-white transition-all duration-300 overflow-hidden flex flex-col ${
-          maximizado
-            ? 'w-full h-full rounded-none shadow-none border-0'
-            : 'w-full max-w-5xl h-[75vh] min-h-[480px] max-h-[720px] rounded-2xl shadow-2xl border border-slate-200'
-        }`}
-      >
-        <MapaBarrio
-          key={intento}
-          visibles={visibles}
-          base={base}
-          onEstado={setEstado}
-          filtros={{ estado: filtroEstado, categoria: filtroCategoria }}
-          modoMapa={modoMapa}
-          refreshKey={refreshDatos}
-          onApoyarPropuesta={apoyarPropuesta}
-          modoUbicacion={modoUbicacion}
-          onUbicacionElegida={(lngLat) => {
-            setUbicacion(lngLat);
-            setModoUbicacion(false);
-          }}
-        />
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-50 text-slate-800 font-sans">
+      <Sidebar
+        currentView={currentView}
+        onNavigate={(view) => setCurrentView(view)}
+        reclamosCount={0}
+        cuadrillasActivas={0}
+      />
 
-        {/* Header flotante superior (dentro del mapa) */}
-        <div className="absolute left-3 top-3 z-30 flex items-center gap-2">
-          <header className="rounded-xl border border-slate-200 bg-white/95 px-3 py-1.5 shadow-lg backdrop-blur flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">M</div>
-            <div>
-              <h1 className="text-sm font-bold leading-tight tracking-tight">MAMA ANTULA</h1>
-              <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Gestión Vecinal</p>
-            </div>
-          </header>
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top Bar simplificada */}
+        <header className="h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-between flex-shrink-0">
+          <h1 className="text-sm font-black text-slate-900 uppercase tracking-wide">
+            {currentView}
+          </h1>
+        </header>
 
-          <button
-            type="button"
-            onClick={() => setPanelAbierto((v) => !v)}
-            title={panelAbierto ? 'Ocultar panel' : 'Mostrar panel'}
-            className="rounded-xl bg-white border border-slate-200 p-2 text-slate-600 shadow-lg hover:bg-slate-50 focus:outline-none"
-          >
-            {panelAbierto ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
-            )}
-          </button>
-        </div>
-
-        {/* Navegación de Pestañas (Munify style: pill toggles) */}
-        <nav className="absolute right-3 top-3 z-30 flex items-center bg-white/95 backdrop-blur p-1.5 rounded-xl border border-slate-200 shadow-lg gap-1">
-          {PESTANAS.map(({ id, nombre }) => {
-            const activo = panelActivo === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => abrirPestana(id)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                  activo
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-slate-500 hover:bg-slate-100'
-                }`}
-              >
-                {nombre}
-              </button>
-            );
-          })}
-
-          <div className="h-4 w-px bg-slate-200 mx-1 hidden sm:block" />
-
-          {/* Botón Maximizar / Restaurar estilo Munify */}
-          <button
-            type="button"
-            onClick={() => setMaximizado((v) => !v)}
-            title={maximizado ? 'Restaurar ventana' : 'Maximizar a pantalla completa'}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all border ${
-              maximizado
-                ? 'bg-slate-800 text-white border-slate-800 hover:bg-slate-900 shadow-sm'
-                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-blue-600'
-            }`}
-          >
-            {maximizado ? (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 14h6m0 0v6m0-6L3 21m17-7h-6m0 0v6m0-6l7 7M10 10V4m0 6H4m6 0L3 3m10 7V4m0 6h6m-6 0l7-7" />
-                </svg>
-                <span className="hidden sm:inline">Restaurar</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                </svg>
-                <span className="hidden sm:inline">Maximizar</span>
-              </>
-            )}
-          </button>
-        </nav>
-
-        {/* Switch de Modo Mapa (Puntos vs Calor) */}
-        <div className="absolute right-3 bottom-8 z-30 flex bg-white/90 backdrop-blur p-1 rounded-xl border border-slate-200 shadow-lg">
-          <button
-            onClick={() => setModoMapa('puntos')}
-            className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all ${modoMapa === 'puntos' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
-          >
-            Puntos
-          </button>
-          <button
-            onClick={() => setModoMapa('calor')}
-            className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all ${modoMapa === 'calor' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
-          >
-            Calor
-          </button>
-        </div>
-
-        {/* Panel de contenido dinámico (Munify style: sidebar) */}
-        {panelAbierto && (
-          <aside className="absolute left-3 top-20 z-20 w-80 max-w-[calc(100vw-1.5rem)] max-h-[calc(100%-5.5rem)] overflow-y-auto overscroll-contain flex flex-col gap-3 pb-4 scrollbar-hide">
-          {panelActivo === 'capas' && (
-            <PanelCapas
+        <div className="flex-1 overflow-y-auto">
+          {currentView === 'mapa' ? (
+            <MapaBarrio
               visibles={visibles}
-              onVisibles={setVisibles}
               base={base}
-              onBase={setBase}
-              conteos={estado.fase === 'listo' ? estado.conteos : null}
+              onEstado={() => {}}
             />
+          ) : (
+            Vistas[currentView] || <div className="p-6">Vista no implementada</div>
           )}
-          {panelActivo === 'filtros' && (
-            <PanelFiltros
-              filtroEstado={filtroEstado}
-              setFiltroEstado={setFiltroEstado}
-              filtroCategoria={filtroCategoria}
-              setFiltroCategoria={setFiltroCategoria}
-            />
-          )}
-          {panelActivo === 'reportar' && (
-            <div className="flex flex-col gap-4">
-              <FormularioProblema
-                onSuccess={() => {
-                  setRefreshDatos((n) => n + 1);
-                  setUbicacion(null);
-                  setModoUbicacion(false);
-                }}
-                onIniciarUbicacion={() => {
-                  setModoUbicacion((v) => !v);
-                }}
-                ubicacion={ubicacion}
-                modoUbicacion={modoUbicacion}
-              />
-              <FormularioPropuesta
-                onSuccess={() => {
-                  setRefreshDatos((n) => n + 1);
-                  setUbicacion(null);
-                  setModoUbicacion(false);
-                }}
-                onIniciarUbicacion={() => {
-                  setModoUbicacion((v) => !v);
-                }}
-                ubicacion={ubicacion}
-                modoUbicacion={modoUbicacion}
-              />
-            </div>
-          )}
-          {panelActivo === 'dashboard' && <VisualizacionDatos refreshKey={refreshDatos} />}
-          {panelActivo === 'seguimiento' && (
-            <PanelSeguimiento
-              filtroEstado={filtroEstado}
-              filtroCategoria={filtroCategoria}
-              refreshKey={refreshDatos}
-            />
-          )}
-        </aside>
-      )}
-
-      {estado.fase === 'cargando' && (
-        <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white px-4 py-2 text-sm shadow-lg">
-          Cargando datos…
         </div>
-      )}
-
-      {estado.fase === 'error' && (
-        <div className="absolute left-1/2 top-1/2 z-10 w-80 max-w-[90vw] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-red-200 bg-white p-4 text-sm shadow-xl">
-          <p className="mb-1 font-semibold text-red-700">No se pudieron cargar los datos</p>
-          <p className="mb-3 break-words text-slate-600">{estado.mensaje}</p>
-          <button
-            type="button"
-            onClick={() => setIntento((i) => i + 1)}
-            className="rounded bg-red-600 px-3 py-1.5 font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400"
-          >
-            Reintentar
-          </button>
-        </div>
-      )}
-      </div>
+      </main>
     </div>
   );
 }
