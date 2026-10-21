@@ -1,40 +1,48 @@
 import { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import MapaBarrio from './components/MapaBarrio';
-import type { ReactNode } from 'react';
-
-// Placeholder de vistas futuras
-const Vistas: Record<string, ReactNode> = {
-  tablero: <div className="p-6">Tablero de Gestión (Pendiente)</div>,
-  mapa: <div className="h-full w-full">Mapa</div>,
-  reclamos: <div className="p-6">Reclamos Vecinales (Pendiente)</div>,
-  configuracion: <div className="p-6">Configuración (Pendiente)</div>,
-};
+import Tablero from './components/vistas/Tablero';
+import Reclamos from './components/vistas/Reclamos';
+import Obras from './components/vistas/Obras';
+import Catastro from './components/vistas/Catastro';
+import AsistenteIA from './components/vistas/AsistenteIA';
+import Sistema from './components/vistas/Sistema';
 
 type ViewMode = 'tablero' | 'mapa' | 'reclamos' | 'obras' | 'catastro' | 'asistente' | 'configuracion';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewMode>('tablero');
 
+  // TODO: Obtener conteos reales de la API
+  const reclamosCount = 4;
+  const cuadrillasActivas = 2;
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-50 text-slate-800 font-sans">
       <Sidebar
         currentView={currentView}
         onNavigate={(view) => setCurrentView(view)}
-        reclamosCount={0}
-        cuadrillasActivas={0}
+        reclamosCount={reclamosCount}
+        cuadrillasActivas={cuadrillasActivas}
       />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Bar simplificada */}
         <header className="h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-between flex-shrink-0">
           <h1 className="text-sm font-black text-slate-900 uppercase tracking-wide">
-            {currentView}
+            {currentView === 'tablero' && 'Tablero de Gestión'}
+            {currentView === 'mapa' && 'Visor SIG Territorial'}
+            {currentView === 'reclamos' && 'Bandeja de Reclamos Vecinales'}
+            {currentView === 'obras' && 'Obras Públicas y Cuadrillas Operativas'}
+            {currentView === 'catastro' && 'Catastro y Territorio Municipal'}
+            {currentView === 'asistente' && 'Asistente IA Municipal'}
+            {currentView === 'configuracion' && 'Configuración del Sistema'}
           </h1>
         </header>
 
         <div className="flex-1 overflow-y-auto relative">
-          {currentView === 'mapa' ? (
+          {currentView === 'tablero' && <Tablero />}
+          {currentView === 'mapa' && (
             <MapaBarrio
               visibles={{
                 manzanas: true,
@@ -50,9 +58,12 @@ export default function App() {
               base="osm"
               onEstado={() => {}}
             />
-          ) : (
-            Vistas[currentView] || <div className="p-6">Vista no implementada</div>
           )}
+          {currentView === 'reclamos' && <Reclamos />}
+          {currentView === 'obras' && <Obras />}
+          {currentView === 'catastro' && <Catastro />}
+          {currentView === 'asistente' && <AsistenteIA />}
+          {currentView === 'configuracion' && <Sistema />}
         </div>
       </main>
     </div>
