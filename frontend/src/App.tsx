@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import MapaBarrio from './components/MapaBarrio';
-import type { CapasVisibles } from './lib/datos';
-import type { BaseId } from './lib/baseMap';
+import type { ReactNode } from 'react';
 
 // Placeholder de vistas futuras
-const Vistas: Record<string, JSX.Element> = {
+const Vistas: Record<string, ReactNode> = {
   tablero: <div className="p-6">Tablero de Gestión (Pendiente)</div>,
   mapa: <div className="h-full w-full">Mapa</div>,
   reclamos: <div className="p-6">Reclamos Vecinales (Pendiente)</div>,
@@ -16,18 +15,6 @@ type ViewMode = 'tablero' | 'mapa' | 'reclamos' | 'obras' | 'catastro' | 'asiste
 
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewMode>('tablero');
-  const [visibles, setVisibles] = useState<CapasVisibles>({
-    manzanas: true,
-    callesAsfalto: true,
-    callesRipio: true,
-    cauces: true,
-    informacion: true,
-    luminaria: true,
-    entradas: true,
-    problemas: true,
-    propuestas: true,
-  });
-  const [base, setBase] = useState<BaseId>('osm');
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-50 text-slate-800 font-sans">
@@ -49,8 +36,18 @@ export default function App() {
         <div className="flex-1 overflow-y-auto">
           {currentView === 'mapa' ? (
             <MapaBarrio
-              visibles={visibles}
-              base={base}
+              visibles={{
+                manzanas: true,
+                callesAsfalto: true,
+                callesRipio: true,
+                cauces: true,
+                informacion: true,
+                luminaria: true,
+                entradas: true,
+                problemas: true,
+                propuestas: true,
+              }}
+              base="osm"
               onEstado={() => {}}
             />
           ) : (
@@ -61,5 +58,3 @@ export default function App() {
     </div>
   );
 }
-
-export default App;
