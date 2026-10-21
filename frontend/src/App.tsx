@@ -33,7 +33,7 @@ export default function App() {
           </h1>
         </header>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto relative">
           {currentView === 'mapa' ? (
             <MapaBarrio
               visibles={{
