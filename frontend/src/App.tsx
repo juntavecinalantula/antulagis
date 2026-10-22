@@ -57,12 +57,21 @@ export default function App() {
     }
   }, [currentView, pestanaVisor]);
 
+  // Escucha el hash:_enlaces profundos y el botón "atrás" del navegador.
+  useEffect(() => {
+    const alCambiarHash = () => {
+      const { vista, pestana } = leerHash();
+      setCurrentView((v) => (v === vista ? v : vista));
+      setPestanaVisor((p) => (p === pestana ? p : pestana));
+    };
+    window.addEventListener('hashchange', alCambiarHash);
+    return () => window.removeEventListener('hashchange', alCambiarHash);
+  }, []);
+
   const { problemas, propuestas, resumen, loading, error } = useReportes(refreshKey);
 
   // Reportes vecinales que todavía no están resueltos (badge del menú).
   const reclamosActivos = problemas.filter((p) => p.estado !== 'resuelto' && p.estado !== 'archivado').length;
-  // Reportes en ejecución (cuadrillas en calle).
-  const cuadrillasActivas = problemas.filter((p) => p.estado === 'en_proceso').length;
 
   const handleNavigate = (view: ViewMode) => {
     setCurrentView(view);
@@ -83,7 +92,7 @@ export default function App() {
           currentView={currentView}
           onNavigate={handleNavigate}
           reclamosCount={reclamosActivos}
-          cuadrillasActivas={cuadrillasActivas}
+          propuestasCount={propuestas.length}
         />
       </div>
 
@@ -107,7 +116,7 @@ export default function App() {
               currentView={currentView}
               onNavigate={handleNavigate}
               reclamosCount={reclamosActivos}
-              cuadrillasActivas={cuadrillasActivas}
+              propuestasCount={propuestas.length}
             />
           </div>
         </div>
@@ -128,7 +137,7 @@ export default function App() {
               {currentView === 'tablero' && 'Tablero de Gestión'}
               {currentView === 'mapa' && 'Visor SIG Territorial'}
               {currentView === 'reclamos' && 'Bandeja de Reclamos Vecinales'}
-              {currentView === 'obras' && 'Obras Públicas y Cuadrillas'}
+              {currentView === 'obras' && 'Obras y Propuestas Vecinales'}
               {currentView === 'catastro' && 'Catastro y Territorio'}
               {currentView === 'asistente' && 'Asistente IA Municipal'}
               {currentView === 'configuracion' && 'Configuración del Sistema'}
@@ -183,7 +192,7 @@ export default function App() {
               onNavigate={handleNavigate}
             />
           )}
-          {currentView === 'obras' && <Obras problemas={problemas} />}
+          {currentView === 'obras' && <Obras problemas={problemas} propuestas={propuestas} />}
           {currentView === 'catastro' && <Catastro />}
           {currentView === 'asistente' && <AsistenteIA />}
           {currentView === 'configuracion' && <Sistema />}

@@ -69,10 +69,10 @@ cableado a los datos reales de InsForge:
 
 | Vista | Fuente de datos |
 |-------|-----------------|
-| Tablero | KPIs derivados de `problemas` + `propuestas` (`% resueltos`, tiempo medio de resolución, top de categorías, últimos reportes) |
-| Visor SIG | `MapaBarrio` (capas territoriales + reportes) con panel flotante de capas, filtros, alta de reportes con **ubicación por clic en el mapa** y seguimiento público |
+| Tablero | KPIs derivados de `problemas` + `propuestas` (`% resueltos`, tiempo medio de resolución, top de categorías, últimos reportes) y bloque **Accesos** con entrada directa a cada sección |
+| Visor SIG | `MapaBarrio` (capas territoriales + reportes, con nombres de calles) y panel flotante de capas, filtros, alta de reportes con **ubicación por clic en el mapa** y seguimiento público |
 | Reclamos | Listado real de `problemas` con búsqueda por texto/código y filtros por estado y categoría |
-| Obras | Frentes de trabajo derivados de los reclamos en revisión o en proceso, agrupados por rubro |
+| Obras y Propuestas | `propuestas` vecinales (con estado y apoyos) + frentes de obra derivados de los reclamos en revisión o en proceso, agrupados por rubro |
 | Catastro | `calles` (pavimento y longitud) + nombres reales de OSM vía `road.fid` + `manzanas` |
 | Sistema | Verificación de conexión contra el backend y estado de permisos (RLS, anon key) |
 

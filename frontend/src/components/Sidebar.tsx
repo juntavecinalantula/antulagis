@@ -2,7 +2,7 @@ import {
   LayoutDashboard,
   Map as MapIcon,
   AlertCircle,
-  HardHat,
+  Lightbulb,
   Compass,
   Bot,
   Settings,
@@ -16,15 +16,15 @@ interface SidebarProps {
   onNavigate: (view: ViewMode) => void;
   /** Reportes vecinales activos (se muestra como badge en el menú). */
   reclamosCount: number;
-  /** Cuadrillas de obra en calle. */
-  cuadrillasActivas: number;
+  /** Propuestas vecinales cargadas. */
+  propuestasCount: number;
 }
 
 export const Sidebar = ({
   currentView,
   onNavigate,
   reclamosCount,
-  cuadrillasActivas,
+  propuestasCount,
 }: SidebarProps) => {
   const navItems = [
     { id: 'tablero' as ViewMode, label: 'Tablero de Gestión', icon: LayoutDashboard, badge: null as string | null },
@@ -37,9 +37,9 @@ export const Sidebar = ({
     },
     {
       id: 'obras' as ViewMode,
-      label: 'Obras y Cuadrillas',
-      icon: HardHat,
-      badge: cuadrillasActivas > 0 ? `${cuadrillasActivas} act.` : null,
+      label: 'Obras y Propuestas',
+      icon: Lightbulb,
+      badge: propuestasCount > 0 ? String(propuestasCount) : null,
     },
     { id: 'catastro' as ViewMode, label: 'Catastro y Calles', icon: Compass, badge: null },
     { id: 'asistente' as ViewMode, label: 'Asistente IA Municipal', icon: Bot, badge: null },

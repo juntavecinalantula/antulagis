@@ -7,13 +7,25 @@ import {
   ArrowUpRight,
   Map as MapIcon,
   Lightbulb,
+  Compass,
+  Bot,
+  Layers,
 } from 'lucide-react';
 import MapaBarrio from '../MapaBarrio';
 import { etiquetaCategoria, etiquetaEstado, ESTADOS_REPORTE } from '../../lib/datos';
 import { masRecientes, topCategorias, type Reporte, type Resumen } from '../../lib/reportes';
 
+type Vista =
+  | 'tablero'
+  | 'mapa'
+  | 'reclamos'
+  | 'obras'
+  | 'catastro'
+  | 'asistente'
+  | 'configuracion';
+
 interface TableroProps {
-  onNavigate?: (view: 'tablero' | 'mapa' | 'reclamos' | 'obras' | 'catastro' | 'asistente' | 'configuracion') => void;
+  onNavigate?: (view: Vista) => void;
   resumen: Resumen;
   problemas: Reporte[];
   propuestas: Reporte[];
@@ -69,6 +81,57 @@ export default function Tablero({ onNavigate, resumen, problemas, propuestas, lo
     6,
   );
 
+  // Accesos directos a cada sección del sistema.
+  const accesos: {
+    vista: Vista;
+    titulo: string;
+    detalle: string;
+    icon: typeof MapIcon;
+    color: string;
+    bg: string;
+  }[] = [
+    {
+      vista: 'mapa',
+      titulo: 'Visor SIG Territorial',
+      detalle: 'Capas, nombres de calles y reportes sobre el mapa',
+      icon: MapIcon,
+      color: 'text-blue-600',
+      bg: 'bg-blue-100',
+    },
+    {
+      vista: 'reclamos',
+      titulo: 'Reclamos Vecinales',
+      detalle: `${resumen.totalProblemas} reclamos · ${resumen.nuevos} sin revisar`,
+      icon: AlertCircle,
+      color: 'text-amber-600',
+      bg: 'bg-amber-100',
+    },
+    {
+      vista: 'obras',
+      titulo: 'Obras y Propuestas',
+      detalle: `${resumen.totalPropuestas} propuestas vecinales · ${resumen.enGestion} obras en curso`,
+      icon: Lightbulb,
+      color: 'text-emerald-600',
+      bg: 'bg-emerald-100',
+    },
+    {
+      vista: 'catastro',
+      titulo: 'Catastro y Calles',
+      detalle: 'Calles, manzanas, pavimentos y superficie',
+      icon: Compass,
+      color: 'text-indigo-600',
+      bg: 'bg-indigo-100',
+    },
+    {
+      vista: 'asistente',
+      titulo: 'Asistente IA Municipal',
+      detalle: 'Consultas sobre el estado del barrio',
+      icon: Bot,
+      color: 'text-sky-600',
+      bg: 'bg-sky-100',
+    },
+  ];
+
   return (
     <div className="p-6 space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -106,6 +169,37 @@ export default function Tablero({ onNavigate, resumen, problemas, propuestas, lo
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Accesos directos a las secciones */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-slate-900 flex items-center gap-2">
+            <Layers className="w-4 h-4 text-slate-400" />
+            Accesos
+          </h3>
+          <span className="text-xs text-slate-400">Entradas directas a cada sección</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {accesos.map((acceso) => (
+            <button
+              key={acceso.vista}
+              type="button"
+              onClick={() => onNavigate?.(acceso.vista)}
+              disabled={!onNavigate}
+              className="bg-white text-left p-4 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all disabled:opacity-60 disabled:cursor-default group"
+            >
+              <div className={`p-2.5 rounded-xl ${acceso.bg} ${acceso.color} inline-flex`}>
+                <acceso.icon className="w-5 h-5" />
+              </div>
+              <h4 className="mt-3 font-bold text-slate-900 text-sm group-hover:text-blue-600 transition-colors flex items-center gap-1">
+                {acceso.titulo}
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </h4>
+              <p className="mt-1 text-xs text-slate-500 leading-relaxed">{acceso.detalle}</p>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
