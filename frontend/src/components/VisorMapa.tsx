@@ -158,7 +158,7 @@ export default function VisorMapa({ refreshKey, pestana, onPestana, onReporteCre
         <button
           type="button"
           onClick={() => setPanelAbierto(true)}
-          className="absolute bottom-4 left-4 z-40 rounded-full bg-blue-600 px-3 py-2 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors"
+          className="absolute top-4 right-4 z-40 rounded-full bg-blue-600 px-3 py-2 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors"
           aria-label="Abrir panel de herramientas"
         >
           <Layers className="h-4 w-4 mr-1" /> Herramientas
