@@ -64,6 +64,22 @@ npx -y @insforge/cli db migrations up <archivo>.sql
 npx -y @insforge/cli db query "select ... "
 ```
 
+Dos detalles de la CLI que conviene tener presentes:
+
+- El nombre del archivo de migración debe llevar **guiones** en el nombre
+  (`20261016000000_seguimiento-codigo.sql`); con guiones bajos lo rechaza.
+- `db query` corre una sola sentencia: para DDL o varios statements hay que
+  usar `db migrations up`.
+
+Y en el SDK, un `insert` devuelve `{ data: null }` salvo que se encadene `.select()`:
+
+```ts
+const { data, error } = await insforge.database
+  .from('problemas')
+  .insert([registro])
+  .select('id, codigo');   // trae el código que generó la base
+```
+
 Ver `docs/` para el modelo de datos GIS (`02-modelo-gis.md`), el estado de la base
 (`01-estado-actual.md`) y el benchmark de plataformas vecinales
 (`04-benchmark-paginas-vecinales.md`).
