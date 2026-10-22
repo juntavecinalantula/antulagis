@@ -137,6 +137,7 @@ export default function Tablero({ onNavigate, resumen, problemas, propuestas, lo
                 entradas: true,
                 problemas: true,
                 propuestas: true,
+                nombresCalles: true,
               }}
               base="osm"
               onEstado={() => {}}

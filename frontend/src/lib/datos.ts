@@ -16,6 +16,8 @@ export type Conteos = {
   /** Reportes vecinales georreferenciados (0 si la consulta aún no está cableada). */
   problemas?: number;
   propuestas?: number;
+  /** Calles del barrio con nombre conocido (de la capa OSM). */
+  callesConNombre?: number;
 };
 
 /** Estado de visibilidad de cada capa del visor. */
@@ -29,6 +31,8 @@ export type CapasVisibles = {
   entradas: boolean;
   problemas: boolean;
   propuestas: boolean;
+  /** Etiquetas con el nombre de cada calle. */
+  nombresCalles: boolean;
 };
 
 /**
@@ -136,9 +140,11 @@ export function porcentaje(n: number, total: number): number {
 export const ETIQUETAS: Record<string, string> = {
   codigo: 'Código',
   nombre: 'Nombre',
+  nombre_calle: 'Calle',
   mza: 'Manzana',
   tipo: 'Tipo',
   Asfalto: 'Pavimento',
+  material: 'Pavimento',
   waterway: 'Tipo de cauce',
   name: 'Nombre (OSM)',
   osm_id: 'ID OSM',

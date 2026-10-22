@@ -20,6 +20,12 @@ import {
   type Fila,
 } from '../lib/datos';
 import { aplicarBase, estiloBase, type BaseId } from '../lib/baseMap';
+import {
+  callesConNombre,
+  featureCollectionDeEtiquetas,
+  nombresDeCalles,
+  nombrarCalles,
+} from '../lib/etiquetas';
 
 export type EstadoMapa =
   | { fase: 'cargando' }
@@ -62,6 +68,7 @@ const GRUPOS: Record<keyof CapasVisibles, string[]> = {
   entradas: ['entradas-line'],
   problemas: ['problemas-circle'],
   propuestas: ['propuestas-circle'],
+  nombresCalles: ['calles-label'],
 };
 
 /** Capas de MapLibre que reciben popup (incluye las dos de calles). */
@@ -69,6 +76,7 @@ const CAPAS_CON_POPUP = [
   'manzanas-fill',
   'calles-asfalto-line',
   'calles-ripio-line',
+  'calles-label',
   'cauces-line',
   'informacion-circle',
   'luminaria-circle',
@@ -78,20 +86,58 @@ const CAPAS_CON_POPUP = [
 ];
 
 /** Propiedades que no deben mostrarse crudas en el popup. */
-const POPUP_OMITIR = new Set(['geom', 'dominio_categoria', 'dominio_estado', 'dominio_prioridad', 'dominio_canal', 'autor_id', 'barrio_id']);
+const POPUP_OMITIR = new Set([
+  'geom',
+  'autor_id',
+  'barrio_id',
+  'fid',
+  'id',
+  'jerarquia',
+  'sentido',
+  'updated_at',
+  'Asfalto',
+]);
+
+/** Propiedades numéricas que se muestran redondeadas. */
+const POPUP_NUMERICAS = new Set(['longitud_m', 'superficie_m2', 'perimetro_m', 'altura_m', 'potencia_w']);
+
+/** Capas cuyo origen no es un reporte (la fecha de carga no aporta). */
+const CAPAS_SIN_FECHAS = new Set([
+  'manzanas-fill',
+  'calles-asfalto-line',
+  'calles-ripio-line',
+  'calles-label',
+  'cauces-line',
+  'entradas-line',
+]);
 
 function contenidoPopup(
   propiedades: Record<string, unknown> | null | undefined,
+  capa?: string,
 ): string {
   if (!propiedades) return '';
+  const sinFechas = capa ? CAPAS_SIN_FECHAS.has(capa) : false;
   const filas = Object.entries(propiedades)
-    .filter(([k, v]) => !POPUP_OMITIR.has(k) && v !== null && v !== undefined && v !== '')
+    .filter(
+      ([k, v]) =>
+        !POPUP_OMITIR.has(k) &&
+        !k.startsWith('dominio_') &&
+        !(sinFechas && (k === 'created_at' || k === 'updated_at')) &&
+        v !== null &&
+        v !== undefined &&
+        v !== '' &&
+        String(v) !== 'sin_dato',
+    )
     .map(([k, v]) => {
       let valor: unknown = v;
       // Traducir catálogo a etiqueta legible (estilo Pulso Ciudadano / Munify)
       if (k === 'estado') valor = etiquetaEstado(v);
       else if (k === 'categoria') valor = etiquetaCategoria(v);
-      else if ((k === 'created_at' || k === 'resuelto_en' || k === 'updated_at') && v) {
+      else if (k === 'tipo' && v === TIPO_ASFALTO) valor = 'Asfalto';
+      else if (k === 'tipo' && v === TIPO_RIPIO) valor = 'Ripio con cuneta';
+      else if (POPUP_NUMERICAS.has(k) && typeof v === 'number') {
+        valor = Math.round(v * 10) / 10;
+      } else if ((k === 'created_at' || k === 'resuelto_en' || k === 'updated_at') && v) {
         valor = new Date(String(v)).toLocaleString('es-AR');
       }
       return `<tr><td style="color:#64748b;padding-right:8px;vertical-align:top;">${escapeHtml(ETIQUETAS[k] ?? k)}</td><td><b>${escapeHtml(valor)}</b></td></tr>`;
@@ -227,14 +273,17 @@ export default function MapaBarrio({
       }
       try {
         // geom ya llega como geometría GeoJSON desde la REST de InsForge.
-        const [rCalles, rManzanas, rCauces, rInformacion, rLuminaria, rEntradas] = await Promise.all([
-          insforge.database.from('calles').select('*').limit(1000),
-          insforge.database.from('manzanas').select('*').limit(1000),
-          insforge.database.from('waterways').select('*').limit(1000),
-          insforge.database.from('informacion').select('*').limit(1000),
-          insforge.database.from('luminaria_publica').select('*').limit(2000),
-          insforge.database.from('entradas').select('*').limit(1000),
-        ]);
+        const [rCalles, rManzanas, rCauces, rInformacion, rLuminaria, rEntradas, rRoad] =
+          await Promise.all([
+            insforge.database.from('calles').select('*').limit(1000),
+            insforge.database.from('manzanas').select('*').limit(1000),
+            insforge.database.from('waterways').select('*').limit(1000),
+            insforge.database.from('informacion').select('*').limit(1000),
+            insforge.database.from('luminaria_publica').select('*').limit(2000),
+            insforge.database.from('entradas').select('*').limit(1000),
+            // Export OSM: aporta el nombre real de cada calle (fid compartido).
+            insforge.database.from('road').select('fid, name').limit(5000),
+          ]);
         if (!vivo) return;
         const fallo =
           rCalles.error ??
@@ -246,6 +295,12 @@ export default function MapaBarrio({
         if (fallo) throw fallo;
 
         const fcCalles = filasAFeatureCollection((rCalles.data ?? []) as Fila[]);
+        // Unir el nombre de la calle (capa OSM) con cada tramo de la capa curada.
+        nombrarCalles(
+          fcCalles,
+          nombresDeCalles((rRoad.data ?? []) as unknown as Fila[]),
+        );
+        const fcEtiquetas = featureCollectionDeEtiquetas(fcCalles);
         const fcManzanas = filasAFeatureCollection((rManzanas.data ?? []) as Fila[]);
         const fcCauces = filasAFeatureCollection((rCauces.data ?? []) as Fila[]);
         const fcInformacion = filasAFeatureCollection((rInformacion.data ?? []) as Fila[]);
@@ -261,6 +316,7 @@ export default function MapaBarrio({
 
         map.addSource('manzanas', { type: 'geojson', data: fcManzanas });
         map.addSource('calles', { type: 'geojson', data: fcCalles });
+        map.addSource('calles-etiquetas', { type: 'geojson', data: fcEtiquetas });
         map.addSource('cauces', { type: 'geojson', data: fcCauces });
         map.addSource('informacion', { type: 'geojson', data: fcInformacion });
         map.addSource('luminaria', { type: 'geojson', data: fcLuminaria });
@@ -312,6 +368,7 @@ export default function MapaBarrio({
           minzoom: 14.5,
           layout: {
             'text-field': ['coalesce', ['get', 'mza'], ['get', 'codigo'], ''],
+            'text-font': ['Noto Sans Regular'],
             'text-size': 11,
             'text-padding': 2,
           },
@@ -319,6 +376,31 @@ export default function MapaBarrio({
             'text-color': '#1e3a8a',
             'text-halo-color': '#ffffff',
             'text-halo-width': 1.5,
+          },
+        });
+        // Nombres de las calles: una etiqueta por calle, escrita a lo largo del
+        // tramo más largo (evita repetir el mismo nombre en cada cuadra).
+        map.addLayer({
+          id: 'calles-label',
+          type: 'symbol',
+          source: 'calles-etiquetas',
+          minzoom: 13.5,
+          layout: {
+            'symbol-placement': 'line',
+            'symbol-sort-key': ['get', 'largo'],
+            'text-field': ['get', 'nombre_calle'],
+            'text-font': ['Noto Sans Bold'],
+            'text-size': ['interpolate', ['linear'], ['zoom'], 13, 10, 17, 13],
+            'text-max-width': 10,
+            'text-padding': 3,
+            'text-rotation-alignment': 'map',
+            'text-letter-spacing': 0.02,
+          },
+          paint: {
+            'text-color': '#0f172a',
+            'text-halo-color': '#ffffff',
+            'text-halo-width': 1.6,
+            'text-halo-blur': 0.3,
           },
         });
         // Información georreferenciada: puntos azules con popup (nombre del lugar)
@@ -437,7 +519,7 @@ export default function MapaBarrio({
             if (!f) return;
             new maplibregl.Popup()
               .setLngLat(e.lngLat)
-              .setHTML(contenidoPopup(f.properties))
+              .setHTML(contenidoPopup(f.properties, id))
               .addTo(map);
           });
           map.on('mouseenter', id, () => {
@@ -488,6 +570,7 @@ export default function MapaBarrio({
           entradas: fcEntradas.features.length,
           problemas: ultimosReportes.current?.fcProb.features.length ?? 0,
           propuestas: ultimosReportes.current?.fcProp.features.length ?? 0,
+          callesConNombre: callesConNombre(fcCalles),
         };
         conteosBaseRef.current = conteos;
         onEstado({ fase: 'listo', conteos });
@@ -507,7 +590,7 @@ export default function MapaBarrio({
       const f = e.features?.[0];
       if (!f || f.id === undefined && f.properties?.id === undefined) return;
       const id = Number(f.properties?.id);
-      const html = contenidoPopup(f.properties);
+      const html = contenidoPopup(f.properties, 'propuestas-circle');
       new maplibregl.Popup({ closeButton: true })
         .setLngLat(e.lngLat)
         .setHTML(
@@ -543,6 +626,15 @@ export default function MapaBarrio({
     // La visibilidad del anillo de propuestas sigue a la capa base.
     if (map.getLayer('propuestas-ring')) {
       map.setLayoutProperty('propuestas-ring', 'visibility', visibles.propuestas ? 'visible' : 'none');
+    }
+    // Los nombres de calle solo tienen sentido si las calles están visibles.
+    if (map.getLayer('calles-label')) {
+      const conCalles = visibles.callesAsfalto || visibles.callesRipio;
+      map.setLayoutProperty(
+        'calles-label',
+        'visibility',
+        visibles.nombresCalles && conCalles ? 'visible' : 'none',
+      );
     }
     // Controlar visibilidad de capa de calor según modoMapa
     if (map.getLayer('problemas-heat')) {

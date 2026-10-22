@@ -40,6 +40,7 @@ const TODAS_VISIBLES: CapasVisibles = {
   entradas: true,
   problemas: true,
   propuestas: true,
+  nombresCalles: true,
 };
 
 const PESTANAS: { id: PestanaVisor; etiqueta: string; icon: typeof Layers }[] = [

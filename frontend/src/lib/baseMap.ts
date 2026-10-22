@@ -9,6 +9,9 @@ export type BaseId = 'osm' | 'satelite';
  */
 export const estiloBase: StyleSpecification = {
   version: 8,
+  // Servidor de glifos público (MapLibre demo tiles). Sin esto las capas de
+  // texto (nombres de calles, números de manzana) no se renderizan.
+  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
   sources: {
     osm: {
       type: 'raster',

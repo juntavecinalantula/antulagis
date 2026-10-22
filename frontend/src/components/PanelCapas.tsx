@@ -14,6 +14,7 @@ const CAPAS: { id: keyof CapasVisibles; nombre: string }[] = [
   { id: 'manzanas', nombre: 'Manzanas' },
   { id: 'callesAsfalto', nombre: 'Calles asfaltadas' },
   { id: 'callesRipio', nombre: 'Calles de ripio' },
+  { id: 'nombresCalles', nombre: 'Nombres de calles' },
   { id: 'cauces', nombre: 'Canal de desagüe' },
   { id: 'entradas', nombre: 'Entradas al barrio' },
   { id: 'luminaria', nombre: 'Luminaria pública' },
@@ -50,8 +51,13 @@ export default function PanelCapas({
           // El porcentaje se muestra únicamente en las dos filas de calles
           const pct =
             conteos && CAPAS_CON_PORCENTAJE.includes(id)
-              ? `${porcentaje(conteos[id] ?? 0, conteos.calles)}%`
+              ? `${porcentaje(conteos[id as keyof Conteos] ?? 0, conteos.calles)}%`
               : null;
+          // La fila de nombres muestra cuántas calles tienen nombre conocido.
+          const valor =
+            id === 'nombresCalles'
+              ? (conteos?.callesConNombre ?? '—')
+              : (pct ?? (conteos ? (conteos[id as keyof Conteos] ?? '—') : '—'));
           return (
             <li key={id} className="flex items-center gap-2">
               <input
@@ -65,7 +71,7 @@ export default function PanelCapas({
                 {nombre}
               </label>
               <span className="whitespace-nowrap tabular-nums text-xs text-slate-400">
-                {pct ?? (conteos ? (conteos[id] ?? '—') : '—')}
+                {valor}
               </span>
             </li>
           );
@@ -83,6 +89,10 @@ export default function PanelCapas({
           <li className="flex items-center gap-2">
             <span className="inline-block h-1 w-5 rounded bg-[#5af916]" />
             Ripio con cuneta
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="inline-block w-5 text-center text-[10px] font-bold text-slate-700">Aa</span>
+            Nombre de la calle
           </li>
         <li className="flex items-center gap-2">
           <span className="inline-block h-3 w-4 rounded-sm border border-blue-700 bg-blue-500/30" />
