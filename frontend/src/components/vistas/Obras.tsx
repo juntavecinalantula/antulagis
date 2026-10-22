@@ -56,8 +56,8 @@ export default function Obras({ problemas, propuestas }: Props) {
   const totalApoyos = propuestas.reduce((acc, p) => acc + (p.apoyos ?? 0), 0);
 
   return (
-    <div className="p-6 space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Obras y Propuestas</h2>
           <p className="text-slate-500">
@@ -158,7 +158,7 @@ export default function Obras({ problemas, propuestas }: Props) {
           Frentes de obra en curso
         </h3>
         {porRubro.length === 0 ? (
-          <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-10 text-center">
+          <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-6 sm:p-10 text-center">
             <HardHat className="w-8 h-8 text-slate-300 mx-auto mb-3" />
             <p className="font-bold text-slate-700">No hay obras abiertas</p>
             <p className="text-sm text-slate-500 mt-1">
@@ -167,10 +167,10 @@ export default function Obras({ problemas, propuestas }: Props) {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {porRubro.map((frente) => (
-              <div key={frente.categoria} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <div className="flex justify-between items-start mb-4">
+              <div key={frente.categoria} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="flex justify-between items-start mb-3">
                   <div className="p-3 bg-blue-100 text-blue-600 rounded-xl">
                     <Truck className="w-6 h-6" />
                   </div>
@@ -183,7 +183,7 @@ export default function Obras({ problemas, propuestas }: Props) {
                   </span>
                 </div>
                 <h4 className="font-bold text-slate-900">Cuadrilla {frente.etiqueta}</h4>
-                <div className="mt-4 space-y-2 text-sm text-slate-500">
+                <div className="mt-3 space-y-2 text-sm text-slate-500">
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4" /> {frente.cantidad} reclamo
                     {frente.cantidad === 1 ? '' : 's'} en este rubro

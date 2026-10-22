@@ -32,9 +32,9 @@ export default function Reclamos({ problemas, loading, onNuevoReclamo, onNavigat
 
   return (
     <div className="flex flex-col h-full bg-slate-50 animate-in fade-in duration-500">
-      <div className="bg-white border-b border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3 flex-1 min-w-[280px]">
-          <div className="relative flex-1 max-w-md">
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          <div className="relative flex-1 min-w-[180px] sm:min-w-[280px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
@@ -47,7 +47,7 @@ export default function Reclamos({ problemas, loading, onNuevoReclamo, onNavigat
           <select
             value={estado}
             onChange={(e) => setEstado(e.target.value)}
-            className="bg-slate-100 border-transparent rounded-xl px-3 py-2 text-sm text-slate-600 focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full sm:w-auto bg-slate-100 border-transparent rounded-xl px-3 py-2 text-sm text-slate-600 focus:ring-2 focus:ring-blue-500 outline-none"
           >
             <option value="">Todos los estados</option>
             {ESTADOS_REPORTE.map((e) => (
@@ -59,7 +59,7 @@ export default function Reclamos({ problemas, loading, onNuevoReclamo, onNavigat
           <select
             value={categoria}
             onChange={(e) => setCategoria(e.target.value)}
-            className="hidden sm:block bg-slate-100 border-transparent rounded-xl px-3 py-2 text-sm text-slate-600 focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full sm:w-auto bg-slate-100 border-transparent rounded-xl px-3 py-2 text-sm text-slate-600 focus:ring-2 focus:ring-blue-500 outline-none"
           >
             <option value="">Todas las categorías</option>
             {CATEGORIAS_PROBLEMA.map((c) => (
@@ -102,7 +102,7 @@ export default function Reclamos({ problemas, loading, onNuevoReclamo, onNavigat
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 sm:p-6">
         <p className="text-xs text-slate-500 mb-4">
           {loading
             ? 'Cargando reclamos…'
@@ -120,12 +120,12 @@ export default function Reclamos({ problemas, loading, onNuevoReclamo, onNavigat
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filtrados.map((reclamo) => {
               const estadoInfo = ESTADOS_REPORTE.find((e) => e.valor === reclamo.estado);
               return (
-                <div key={reclamo.id} className="bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-md transition-shadow group">
-                  <div className="flex items-start justify-between gap-4">
+                <div key={reclamo.id} className="bg-white border border-slate-200 rounded-2xl p-3 hover:shadow-md transition-shadow group">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded uppercase tracking-wider">
@@ -145,12 +145,12 @@ export default function Reclamos({ problemas, loading, onNuevoReclamo, onNavigat
                       <MoreVertical className="w-5 h-5" />
                     </button>
                   </div>
-                  <div className="mt-4 pt-4 border-t border-slate-50 flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
+                  <div className="mt-3 pt-3 border-t border-slate-50 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
                       {reclamo.direccion && (
                         <div className="flex items-center gap-1 text-xs text-slate-500">
                           <MapPin className="w-3.5 h-3.5" />
-                          <span className="max-w-[160px] truncate">{reclamo.direccion}</span>
+                          <span className="max-w-[140px] truncate">{reclamo.direccion}</span>
                         </div>
                       )}
                       <div className="flex items-center gap-1 text-xs text-slate-500">

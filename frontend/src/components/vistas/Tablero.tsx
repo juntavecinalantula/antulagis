@@ -133,10 +133,10 @@ export default function Tablero({ onNavigate, resumen, problemas, propuestas, lo
   ];
 
   return (
-    <div className="p-6 space-y-8 animate-in fade-in duration-500">
+    <div className="p-4 md:p-6 space-y-6 md:space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Tablero Ejecutivo</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Tablero Ejecutivo</h2>
           <p className="text-slate-500">Indicadores clave de gestión territorial y servicios ciudadanos.</p>
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -148,9 +148,9 @@ export default function Tablero({ onNavigate, resumen, problemas, propuestas, lo
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
-          <div key={stat.label} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <div key={stat.label} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start">
               <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
                 <stat.icon className="w-6 h-6" />
@@ -173,21 +173,21 @@ export default function Tablero({ onNavigate, resumen, problemas, propuestas, lo
 
       {/* Accesos directos a las secciones */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold text-slate-900 flex items-center gap-2">
             <Layers className="w-4 h-4 text-slate-400" />
             Accesos
           </h3>
           <span className="text-xs text-slate-400">Entradas directas a cada sección</span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
           {accesos.map((acceso) => (
             <button
               key={acceso.vista}
               type="button"
               onClick={() => onNavigate?.(acceso.vista)}
               disabled={!onNavigate}
-              className="bg-white text-left p-4 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all disabled:opacity-60 disabled:cursor-default group"
+              className="bg-white text-left p-3 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all disabled:opacity-60 disabled:cursor-default group"
             >
               <div className={`p-2.5 rounded-xl ${acceso.bg} ${acceso.color} inline-flex`}>
                 <acceso.icon className="w-5 h-5" />
@@ -202,9 +202,9 @@ export default function Tablero({ onNavigate, resumen, problemas, propuestas, lo
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Preview de Mapa GIS */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-80 flex flex-col">
+        <div className="lg:col-span-2 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm h-64 sm:h-80 flex flex-col">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-slate-900 flex items-center gap-2">
               <MapIcon className="w-4 h-4 text-blue-500" />
@@ -240,7 +240,7 @@ export default function Tablero({ onNavigate, resumen, problemas, propuestas, lo
         </div>
 
         {/* Distribución por categoría */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-80 overflow-y-auto">
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm h-64 sm:h-80 overflow-y-auto">
           <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-indigo-500" />
             Distribución por Tipo
@@ -287,7 +287,7 @@ export default function Tablero({ onNavigate, resumen, problemas, propuestas, lo
       </div>
 
       {/* Últimos reportes */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-slate-900">Últimos reportes vecinales</h3>
           {onNavigate && (
