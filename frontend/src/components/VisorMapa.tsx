@@ -78,8 +78,9 @@ export default function VisorMapa({ refreshKey, pestana, onPestana, onReporteCre
     if (estado.fase === 'listo') setConteos(estado.conteos);
   };
 
-  /** Al enviar un reporte: se limpian la ubicación y el modo de colocación. */
+  /** Al enviar un reporte: se cierra el panel, se limpian la ubicación y el modo de colocación. */
   const trasReporte = () => {
+    setPanelAbierto(false);
     setUbicacion(null);
     setModoUbicacion(false);
     onReporteCreado();
@@ -152,113 +153,127 @@ export default function VisorMapa({ refreshKey, pestana, onPestana, onReporteCre
         </button>
       </div>
 
+      {/* Botón para abrir el panel lateral (cuando está cerrado) */}
+      {!panelAbierto && (
+        <button
+          type="button"
+          onClick={() => setPanelAbierto(true)}
+          className="absolute bottom-4 left-4 z-40 rounded-full bg-blue-600 px-3 py-2 text-xs font-bold text-white shadow-lg hover:bg-blue-700 transition-colors"
+          aria-label="Abrir panel de herramientas"
+        >
+          <Layers className="h-4 w-4 mr-1" /> Herramientas
+        </button>
+      )}
+
       {/* Panel lateral flotante */}
-      <aside className="absolute bottom-0 right-0 top-0 z-30 flex w-full flex-col bg-slate-50/95 backdrop-blur sm:w-96">
-        {/* Pestañas */}
-        <div className="flex flex-shrink-0 items-center gap-1 border-b border-slate-200 bg-white px-3 py-2">
-          {PESTANAS.map(({ id, etiqueta, icon: Icon }) => (
+      {panelAbierto && (
+        <aside className="absolute bottom-0 right-0 top-0 z-30 flex w-full flex-col bg-slate-50/95 backdrop-blur sm:w-96">
+          {/* Pestañas */}
+          <div className="flex flex-shrink-0 items-center gap-1 border-b border-slate-200 bg-white px-3 py-2">
+            {PESTANAS.map(({ id, etiqueta, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => onPestana(id)}
+                className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                  pestana === id
+                    ? 'bg-blue-600 text-white'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {etiqueta}
+              </button>
+            ))}
             <button
-              key={id}
               type="button"
-              onClick={() => onPestana(id)}
-              className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[10px] font-bold uppercase tracking-wide transition-colors ${
-                pestana === id
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-              }`}
+              onClick={() => setPanelAbierto(false)}
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              aria-label="Cerrar panel de herramientas"
             >
-              <Icon className="h-4 w-4" />
-              {etiqueta}
+              <X className="h-4 w-4" />
             </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => onPestana('capas')}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-            aria-label="Cerrar panel"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+          </div>
 
-        {/* Contenido del panel */}
-        <div className="flex-1 overflow-y-auto p-3">
-          {pestana === 'capas' && (
-            <PanelCapas
-              visibles={visibles}
-              onVisibles={setVisibles}
-              base={base}
-              onBase={setBase}
-              conteos={conteos}
-            />
-          )}
-
-          {pestana === 'filtros' && (
-            <PanelFiltros
-              filtroEstado={filtroEstado}
-              setFiltroEstado={setFiltroEstado}
-              filtroCategoria={filtroCategoria}
-              setFiltroCategoria={setFiltroCategoria}
-            />
-          )}
-
-          {pestana === 'reportar' && (
-            <div className="space-y-3">
-              <div className="flex overflow-hidden rounded-xl bg-white p-1 shadow-sm ring-1 ring-slate-200">
-                <button
-                  type="button"
-                  onClick={() => setFormulario('problema')}
-                  className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
-                    formulario === 'problema'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  Reportar problema
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormulario('propuesta')}
-                  className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
-                    formulario === 'propuesta'
-                      ? 'bg-emerald-600 text-white'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  Proponer solución
-                </button>
-              </div>
-
-              {formulario === 'problema' ? (
-                <FormularioProblema
-                  onSuccess={trasReporte}
-                  onIniciarUbicacion={() => setModoUbicacion(true)}
-                  ubicacion={ubicacion}
-                  modoUbicacion={modoUbicacion}
-                />
-              ) : (
-                <FormularioPropuesta
-                  onSuccess={trasReporte}
-                  onIniciarUbicacion={() => setModoUbicacion(true)}
-                  ubicacion={ubicacion}
-                  modoUbicacion={modoUbicacion}
-                />
-              )}
-            </div>
-          )}
-
-          {pestana === 'seguimiento' && (
-            <div className="space-y-3">
-              <VisualizacionDatos refreshKey={refreshKey} />
-              <PanelSeguimiento
-                filtroEstado={filtroEstado}
-                filtroCategoria={filtroCategoria}
-                refreshKey={refreshKey}
+          {/* Contenido del panel */}
+          <div className="flex-1 overflow-y-auto p-3">
+            {pestana === 'capas' && (
+              <PanelCapas
+                visibles={visibles}
+                onVisibles={setVisibles}
+                base={base}
+                onBase={setBase}
+                conteos={conteos}
               />
-            </div>
-          )}
-        </div>
-      </aside>
+            )}
+
+            {pestana === 'filtros' && (
+              <PanelFiltros
+                filtroEstado={filtroEstado}
+                setFiltroEstado={setFiltroEstado}
+                filtroCategoria={filtroCategoria}
+                setFiltroCategoria={setFiltroCategoria}
+              />
+            )}
+
+            {pestana === 'reportar' && (
+              <div className="space-y-3">
+                <div className="flex overflow-hidden rounded-xl bg-white p-1 shadow-sm ring-1 ring-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setFormulario('problema')}
+                    className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
+                      formulario === 'problema'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    Reportar problema
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormulario('propuesta')}
+                    className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
+                      formulario === 'propuesta'
+                        ? 'bg-emerald-600 text-white'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    Proponer solución
+                  </button>
+                </div>
+
+                {formulario === 'problema' ? (
+                  <FormularioProblema
+                    onSuccess={trasReporte}
+                    onIniciarUbicacion={() => setModoUbicacion(true)}
+                    ubicacion={ubicacion}
+                    modoUbicacion={modoUbicacion}
+                  />
+                ) : (
+                  <FormularioPropuesta
+                    onSuccess={trasReporte}
+                    onIniciarUbicacion={() => setModoUbicacion(true)}
+                    ubicacion={ubicacion}
+                    modoUbicacion={modoUbicacion}
+                  />
+                )}
+              </div>
+            )}
+
+            {pestana === 'seguimiento' && (
+              <div className="space-y-3">
+                <VisualizacionDatos refreshKey={refreshKey} />
+                <PanelSeguimiento
+                  filtroEstado={filtroEstado}
+                  filtroCategoria={filtroCategoria}
+                  refreshKey={refreshKey}
+                />
+              </div>
+            )}
+          </div>
+        </aside>
+      )}
     </div>
   );
 }
