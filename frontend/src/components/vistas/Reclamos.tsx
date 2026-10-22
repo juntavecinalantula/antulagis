@@ -1,79 +1,177 @@
-import { 
-  Search, 
-  Plus, 
-  Filter, 
-  MoreVertical, 
-  MessageSquare, 
-  Paperclip, 
+import { useMemo, useState } from 'react';
+import {
+  Search,
+  Plus,
+  Filter,
+  MoreVertical,
   MapPin,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Map as MapIcon,
 } from 'lucide-react';
-import { ESTADOS_REPORTE, CATEGORIAS_PROBLEMA } from '../../lib/datos';
+import { CATEGORIAS_PROBLEMA, ESTADOS_REPORTE, etiquetaCategoria, etiquetaEstado } from '../../lib/datos';
+import { filtrarReportes, type Reporte } from '../../lib/reportes';
 
-const RECLAMOS_MOCK = [
-  { id: 1, codigo: 'REC-001', titulo: 'Luminaria apagada en Calle 4', categoria: 'alumbrado', estado: 'nuevo', prioridad: 'alta', fecha: '2024-03-20T10:00:00Z', descripcion: 'Frente a la manzana 39, el poste no enciende hace 3 días.', direccion: 'Calle 4 y Av. Principal' },
-  { id: 2, codigo: 'REC-002', titulo: 'Bache profundo', categoria: 'calle', estado: 'en_proceso', prioridad: 'media', fecha: '2024-03-19T14:30:00Z', descripcion: 'Peligro para motos, cerca de la entrada.', direccion: 'Calle de ripio, Mza 10' },
-  { id: 3, codigo: 'REC-003', titulo: 'Poda correctiva urgente', categoria: 'arbolado', estado: 'resuelto', prioridad: 'baja', fecha: '2024-03-18T09:15:00Z', descripcion: 'Ramas tocando cables de baja tensión.', direccion: 'Calle 2 entre 5 y 7' },
-  { id: 4, codigo: 'REC-004', titulo: 'Pérdida de agua en vereda', categoria: 'agua', estado: 'en_revision', prioridad: 'alta', fecha: '2024-03-20T11:45:00Z', descripcion: 'Sale mucha agua limpia del medidor.', direccion: 'M-132, Lote 5' },
-];
+type Props = {
+  problemas: Reporte[];
+  loading?: boolean;
+  /** Abre el visor con el formulario de reporte listo. */
+  onNuevoReclamo?: () => void;
+  onNavigate?: (view: 'mapa' | 'reclamos' | 'obras') => void;
+};
 
-export default function Reclamos() {
+export default function Reclamos({ problemas, loading, onNuevoReclamo, onNavigate }: Props) {
+  const [busqueda, setBusqueda] = useState('');
+  const [estado, setEstado] = useState('');
+  const [categoria, setCategoria] = useState('');
+
+  const filtrados = useMemo(
+    () => filtrarReportes(problemas, { busqueda, estado, categoria }),
+    [problemas, busqueda, estado, categoria],
+  );
+
   return (
     <div className="flex flex-col h-full bg-slate-50 animate-in fade-in duration-500">
       <div className="bg-white border-b border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4 flex-1 min-w-[300px]">
+        <div className="flex items-center gap-3 flex-1 min-w-[280px]">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input type="text" placeholder="Buscar por código, título o vecino..." className="w-full pl-10 pr-4 py-2 bg-slate-100 border-transparent rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+            <input
+              type="text"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar por código, título, dirección..."
+              className="w-full pl-10 pr-4 py-2 bg-slate-100 border-transparent rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            />
           </div>
-          <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"><Filter className="w-5 h-5" /></button>
+          <select
+            value={estado}
+            onChange={(e) => setEstado(e.target.value)}
+            className="bg-slate-100 border-transparent rounded-xl px-3 py-2 text-sm text-slate-600 focus:ring-2 focus:ring-blue-500 outline-none"
+          >
+            <option value="">Todos los estados</option>
+            {ESTADOS_REPORTE.map((e) => (
+              <option key={e.valor} value={e.valor}>
+                {e.etiqueta}
+              </option>
+            ))}
+          </select>
+          <select
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+            className="hidden sm:block bg-slate-100 border-transparent rounded-xl px-3 py-2 text-sm text-slate-600 focus:ring-2 focus:ring-blue-500 outline-none"
+          >
+            <option value="">Todas las categorías</option>
+            {CATEGORIAS_PROBLEMA.map((c) => (
+              <option key={c.valor} value={c.valor}>
+                {c.etiqueta}
+              </option>
+            ))}
+          </select>
+          {(busqueda || estado || categoria) && (
+            <button
+              type="button"
+              onClick={() => {
+                setBusqueda('');
+                setEstado('');
+                setCategoria('');
+              }}
+              className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"
+              aria-label="Limpiar filtros"
+              title="Limpiar filtros"
+            >
+              <Filter className="w-5 h-5" />
+            </button>
+          )}
         </div>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-blue-200 transition-all active:scale-95">
-          <Plus className="w-4 h-4" /> Nuevo Reclamo
-        </button>
+        <div className="flex items-center gap-2">
+          {onNavigate && (
+            <button
+              onClick={() => onNavigate('mapa')}
+              className="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-50 transition-colors"
+            >
+              <MapIcon className="w-4 h-4" /> Ver en el mapa
+            </button>
+          )}
+          <button
+            onClick={onNuevoReclamo}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-blue-200 transition-all active:scale-95"
+          >
+            <Plus className="w-4 h-4" /> Nuevo Reclamo
+          </button>
+        </div>
       </div>
+
       <div className="flex-1 overflow-auto p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {RECLAMOS_MOCK.map((reclamo) => {
-            const estadoInfo = ESTADOS_REPORTE.find(e => e.valor === reclamo.estado);
-            const catInfo = CATEGORIAS_PROBLEMA.find(c => c.valor === reclamo.categoria);
-            return (
-              <div key={reclamo.id} className="bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-md transition-shadow group">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded uppercase tracking-wider">{reclamo.codigo}</span>
-                      <div className={`h-1.5 w-1.5 rounded-full`} style={{ backgroundColor: estadoInfo?.color }} />
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{estadoInfo?.etiqueta}</span>
-                    </div>
-                    <h3 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{reclamo.titulo}</h3>
-                    <p className="text-sm text-slate-500 line-clamp-1">{reclamo.descripcion}</p>
-                  </div>
-                  <button className="p-1 text-slate-400 hover:text-slate-600"><MoreVertical className="w-5 h-5" /></button>
-                </div>
-                <div className="mt-4 pt-4 border-t border-slate-50 flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1 text-xs text-slate-500"><MapPin className="w-3.5 h-3.5" />{reclamo.direccion}</div>
-                    <div className="flex items-center gap-1 text-xs text-slate-500"><Clock className="w-3.5 h-3.5" />{new Date(reclamo.fecha).toLocaleDateString()}</div>
-                    <div className="flex items-center gap-1 text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-lg capitalize">{catInfo?.etiqueta || reclamo.categoria}</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-3 text-slate-400">
-                      <div className="flex items-center gap-1"><MessageSquare className="w-4 h-4" /><span className="text-xs">3</span></div>
-                      <div className="flex items-center gap-1"><Paperclip className="w-4 h-4" /><span className="text-xs">1</span></div>
-                    </div>
-                    {reclamo.prioridad === 'alta' && (
-                      <div className="flex items-center gap-1 text-red-600 bg-red-50 px-2 py-1 rounded-lg text-[10px] font-black uppercase">
-                        <AlertCircle className="w-3 h-3" /> Prioridad Alta
+        <p className="text-xs text-slate-500 mb-4">
+          {loading
+            ? 'Cargando reclamos…'
+            : `${filtrados.length} de ${problemas.length} reclamos vecinales`}
+        </p>
+
+        {filtrados.length === 0 && !loading ? (
+          <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-10 text-center">
+            <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+            <p className="font-bold text-slate-700">No hay reclamos para mostrar</p>
+            <p className="text-sm text-slate-500 mt-1">
+              {problemas.length === 0
+                ? 'Todavía no se cargó ningún reclamo. Usá “Nuevo Reclamo” para reportar el primero.'
+                : 'Probá con otro término de búsqueda o quitá los filtros.'}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtrados.map((reclamo) => {
+              const estadoInfo = ESTADOS_REPORTE.find((e) => e.valor === reclamo.estado);
+              return (
+                <div key={reclamo.id} className="bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-md transition-shadow group">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded uppercase tracking-wider">
+                          {reclamo.codigo ?? `#${reclamo.id}`}
+                        </span>
+                        <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: estadoInfo?.color }} />
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">
+                          {etiquetaEstado(reclamo.estado)}
+                        </span>
                       </div>
-                    )}
+                      <h3 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                        {reclamo.titulo || 'Reporte sin título'}
+                      </h3>
+                      <p className="text-sm text-slate-500 line-clamp-2">{reclamo.descripcion}</p>
+                    </div>
+                    <button className="p-1 text-slate-400 hover:text-slate-600">
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-slate-50 flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      {reclamo.direccion && (
+                        <div className="flex items-center gap-1 text-xs text-slate-500">
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span className="max-w-[160px] truncate">{reclamo.direccion}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1 text-xs text-slate-500">
+                        <Clock className="w-3.5 h-3.5" />
+                        {new Date(reclamo.created_at).toLocaleDateString('es-AR')}
+                      </div>
+                      <div className="flex items-center gap-1 text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-lg">
+                        {etiquetaCategoria(reclamo.categoria)}
+                      </div>
+                    </div>
+                    {reclamo.prioridad === 'alta' || reclamo.prioridad === 'urgente' ? (
+                      <div className="flex items-center gap-1 text-red-600 bg-red-50 px-2 py-1 rounded-lg text-[10px] font-black uppercase">
+                        <AlertCircle className="w-3 h-3" /> Prioridad {reclamo.prioridad}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

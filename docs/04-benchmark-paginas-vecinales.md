@@ -53,7 +53,29 @@ visor actual **AntulaGIS**, con las decisiones de diseño que se derivan para es
 
 ## 5. Próximos pasos sugeridos
 
-1. Ejecutar en InsForge la migración de `codigo` de seguimiento (ver `migrations/20261016000000_seguimiento_codigo.sql`).
+1. ~~Ejecutar en InsForge la migración de `codigo` de seguimiento~~ — **hecho el 2026-10-22**
+   (`migrations/20261016000000_seguimiento-codigo.sql`, aplicada). La base genera
+   `codigo` `MA-AAAA-NNNN` y la app lo muestra al reportar y en los listados.
 2. Conectar autenticación InsForge (login vecino) para habilitar apoyos reales y `autor_id`.
 3. Publicar vista RPC `problemas_recientes` si el volumen crece (>1000 filas).
 4. Iterar el wizard con carga de fotos (bucket `archivos` ya modelado en `20261013005845_archivos.sql`).
+5. Modelar la tabla de cuadrillas de obra: hoy la vista "Obras" se deriva de los reclamos
+   en estado `en_revision` / `en_proceso`.
+
+## 6. Estado del tablero (2026-10-22)
+
+El shell con sidebar (tablero, visor, reclamos, obras, catastro, asistente, sistema) quedó
+cableado a los datos reales de InsForge:
+
+| Vista | Fuente de datos |
+|-------|-----------------|
+| Tablero | KPIs derivados de `problemas` + `propuestas` (`% resueltos`, tiempo medio de resolución, top de categorías, últimos reportes) |
+| Visor SIG | `MapaBarrio` (capas territoriales + reportes) con panel flotante de capas, filtros, alta de reportes con **ubicación por clic en el mapa** y seguimiento público |
+| Reclamos | Listado real de `problemas` con búsqueda por texto/código y filtros por estado y categoría |
+| Obras | Frentes de trabajo derivados de los reclamos en revisión o en proceso, agrupados por rubro |
+| Catastro | `calles` (pavimento y longitud) + nombres reales de OSM vía `road.fid` + `manzanas` |
+| Sistema | Verificación de conexión contra el backend y estado de permisos (RLS, anon key) |
+
+La carga de datos vive en `frontend/src/lib/reportes.ts` (hook `useReportes`) y
+`frontend/src/lib/territorio.ts` (hook `useTerritorio`).
+

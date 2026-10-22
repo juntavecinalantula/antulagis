@@ -117,10 +117,14 @@ export default function MapaBarrio({
   onApoyarPropuesta,
   modoUbicacion = false,
   onUbicacionElegida,
+  ubicacion = null,
 }: Props) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaML | null>(null);
   const [capasListas, setCapasListas] = useState(false);
+  // El mapa se crea de forma asíncrona: los efectos que dependen de él
+  // (marker de ubicación, cursor) esperan a esta bandera.
+  const [mapaCreado, setMapaCreado] = useState(false);
   // Última respuesta conocida de problemas/propuestas para poder refiltrar sin recargar.
   const ultimosReportes = useRef<{ fcProb: FeatureCollection; fcProp: FeatureCollection } | null>(null);
   // Refs para leer props actuales desde handlers registrados una sola vez.
@@ -133,41 +137,40 @@ export default function MapaBarrio({
   const onUbicacionElegidaRef = useRef(onUbicacionElegida);
   onUbicacionElegidaRef.current = onUbicacionElegida;
   const markerRef = useRef<maplibregl.Marker | null>(null);
+  // Conteos de las capas territoriales (sin los de reportes, que dependen de
+  // los filtros): se reutilizan al recalcular los reportes filtrados.
+  const conteosBaseRef = useRef<Conteos | null>(null);
 
   // Manejar el marker de ubicación elegida
   useEffect(() => {
     const map = mapaRef.current;
     if (!map) return;
-    // Access props through arguments as fallback
-    const propsObj = arguments[0];
-    if (propsObj && propsObj.ubicacion) {
+    if (ubicacion) {
       if (!markerRef.current) {
         markerRef.current = new maplibregl.Marker({ color: '#2563eb' })
-          .setLngLat(propsObj.ubicacion)
+          .setLngLat(ubicacion)
           .addTo(map);
       } else {
-        markerRef.current.setLngLat(propsObj.ubicacion);
+        markerRef.current.setLngLat(ubicacion);
       }
     } else if (markerRef.current) {
       markerRef.current.remove();
       markerRef.current = null;
     }
-  }, [arguments[0]?.ubicacion]);
+  }, [ubicacion, mapaCreado]);
 
   // Cursor tipo crosshair cuando está activado el modo ubicación
   useEffect(() => {
     const map = mapaRef.current;
     if (!map) return;
-    // Access props through arguments as fallback
-    const propsObj = arguments[0];
-    map.getCanvas().style.cursor = propsObj && propsObj.modoUbicacion ? 'crosshair' : '';
-  }, [arguments[0]?.modoUbicacion]);
+    map.getCanvas().style.cursor = modoUbicacion ? 'crosshair' : '';
+  }, [modoUbicacion, mapaCreado]);
 
   /**
    * Carga problemas y propuestas georreferenciados aplicando los filtros de
    * estado/categoría (patrón "mapa público con filtros" de pulsociudadano.app).
    */
-  async function recargarReportes(map: MapaML): Promise<void> {
+  async function recargarReportes(map: MapaML): Promise<{ problemas: number; propuestas: number }> {
     const f = filtrosRef.current ?? { estado: '', categoria: '' };
     let qProb = insforge.database.from('problemas').select('*').not('geom', 'is', null).limit(2000);
     let qProp = insforge.database.from('propuestas').select('*').not('geom', 'is', null).limit(2000);
@@ -187,6 +190,7 @@ export default function MapaBarrio({
     ultimosReportes.current = { fcProb, fcProp };
     (map.getSource('problemas') as maplibregl.GeoJSONSource | undefined)?.setData(fcProb);
     (map.getSource('propuestas') as maplibregl.GeoJSONSource | undefined)?.setData(fcProp);
+    return { problemas: fcProb.features.length, propuestas: fcProp.features.length };
   }
 
   // Inicialización única del mapa (React.StrictMode la ejecuta dos veces en dev;
@@ -204,6 +208,7 @@ export default function MapaBarrio({
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
     mapaRef.current = map;
+    setMapaCreado(true);
 
     // Redimensionar automáticamente ante cambios de layout o ventana
     const ro = new ResizeObserver(() => {
@@ -472,19 +477,20 @@ export default function MapaBarrio({
           if (clase === 'asfalto') callesAsfalto++;
           else if (clase === 'ripio') callesRipio++;
         }
-        onEstado({
-          fase: 'listo',
-          conteos: {
-            manzanas: fcManzanas.features.length,
-            calles: fcCalles.features.length,
-            callesAsfalto,
-            callesRipio,
-            cauces: fcCauces.features.length,
-            informacion: fcInformacion.features.length,
-            luminaria: fcLuminaria.features.length,
-            entradas: fcEntradas.features.length,
-          },
-        });
+        const conteos: Conteos = {
+          manzanas: fcManzanas.features.length,
+          calles: fcCalles.features.length,
+          callesAsfalto,
+          callesRipio,
+          cauces: fcCauces.features.length,
+          informacion: fcInformacion.features.length,
+          luminaria: fcLuminaria.features.length,
+          entradas: fcEntradas.features.length,
+          problemas: ultimosReportes.current?.fcProb.features.length ?? 0,
+          propuestas: ultimosReportes.current?.fcProp.features.length ?? 0,
+        };
+        conteosBaseRef.current = conteos;
+        onEstado({ fase: 'listo', conteos });
 
       } catch (e) {
         if (!vivo) return;
@@ -513,15 +519,6 @@ export default function MapaBarrio({
         const btn = document.getElementById(`btn-apoyar-${id}`);
         if (btn) btn.onclick = () => apoyarRef.current?.(id, true);
       });
-    });
-
-    // Click en el mapa para selección de ubicación
-    map.on('click', (e) => {
-      // Si no está en modo ubicación, no hacer nada
-      if (!modoUbicacionRef.current) return;
-      
-      // Llamar al callback con las coordenadas [lng, lat]
-      onUbicacionElegidaRef.current?.([e.lngLat.lng, e.lngLat.lat]);
     });
 
     return () => {
@@ -557,7 +554,18 @@ export default function MapaBarrio({
   useEffect(() => {
     const map = mapaRef.current;
     if (!map || !capasListas) return;
-    void recargarReportes(map).catch((e) => console.error('refiltrando reportes', e));
+    void recargarReportes(map)
+      .then((conteos) => {
+        // Los conteos de las capas vecinales dependen de los filtros activos.
+        const base = conteosBaseRef.current;
+        if (base) {
+          onEstado({
+            fase: 'listo',
+            conteos: { ...base, ...conteos },
+          });
+        }
+      })
+      .catch((e) => console.error('refiltrando reportes', e));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtros?.estado, filtros?.categoria, refreshKey, capasListas]);
 

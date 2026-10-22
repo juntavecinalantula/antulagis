@@ -41,6 +41,7 @@ export const FormularioPropuesta: React.FC<FormularioPropuestaProps> = ({
   const [direccion, setDireccion] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [codigoEnviado, setCodigoEnviado] = useState<string | null>(null);
   const [geocodingLoading, setGeocodingLoading] = useState(false);
   const [geocodingError, setGeocodingError] = useState<string | null>(null);
 
@@ -92,9 +93,19 @@ export const FormularioPropuesta: React.FC<FormularioPropuestaProps> = ({
         registro.lat = ubicacion[1];
         registro.lon = ubicacion[0];
       }
-      const { error } = await insforge.database.from('propuestas').insert([registro]);
+      // `.select()` hace que la API devuelva la fila insertada (con el código
+      // de seguimiento que genera la base).
+      const { data, error } = await insforge.database
+        .from('propuestas')
+        .insert([registro])
+        .select('id, codigo');
       if (error) throw error;
-      alert('Propuesta enviada exitosamente');
+      const codigo = (data as unknown as { codigo?: string }[] | null)?.[0]?.codigo ?? null;
+      setCodigoEnviado(
+        codigo
+          ? `¡Gracias! Tu propuesta quedó registrada con el código de seguimiento ${codigo}.`
+          : '¡Gracias! Tu propuesta quedó registrada.',
+      );
       setTitulo('');
       setDescripcion('');
       setDireccion('');
@@ -148,8 +159,8 @@ export const FormularioPropuesta: React.FC<FormularioPropuestaProps> = ({
         value={direccion}
         onChange={(e) => setDireccion(e.target.value)}
         className="w-full p-2 mb-3 border rounded"
-        minLength={3}
-        required
+        minLength={direccion ? 3 : undefined}
+        required={!ubicacion}
       />
 
       {/* Botón para obtener ubicación en el mapa */}
@@ -205,6 +216,10 @@ export const FormularioPropuesta: React.FC<FormularioPropuestaProps> = ({
           </p>
         )}
       </div>
+
+      {codigoEnviado && (
+        <p className="mb-3 rounded bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{codigoEnviado}</p>
+      )}
 
       {errorMsg && (
         <p className="mb-3 text-sm text-red-600 break-words">{errorMsg}</p>

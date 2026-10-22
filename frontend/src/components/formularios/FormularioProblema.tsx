@@ -108,9 +108,19 @@ export const FormularioProblema: React.FC<FormularioProblemaProps> = ({
         registro.lat = ubicacion[1];
         registro.lon = ubicacion[0];
       }
-      const { error } = await insforge.database.from('problemas').insert([registro]);
+      // `.select()` hace que la API devuelva la fila insertada (con el código
+      // de seguimiento que genera la base).
+      const { data, error } = await insforge.database
+        .from('problemas')
+        .insert([registro])
+        .select('id, codigo');
       if (error) throw error;
-      setCodigoEnviado('¡Gracias! Tu reporte quedó registrado y recibirá un código de seguimiento (MA-AAAA-NNNN) cuando se publique en el mapa.');
+      const codigo = (data as unknown as { codigo?: string }[] | null)?.[0]?.codigo ?? null;
+      setCodigoEnviado(
+        codigo
+          ? `¡Gracias! Tu reporte quedó registrado con el código de seguimiento ${codigo}.`
+          : '¡Gracias! Tu reporte quedó registrado.',
+      );
       setTitulo('');
       setDescripcion('');
       setDireccion('');

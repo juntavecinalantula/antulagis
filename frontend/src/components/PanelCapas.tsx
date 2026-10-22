@@ -80,10 +80,10 @@ export default function PanelCapas({
           <span className="inline-block h-1 w-5 rounded bg-[#eb2581]" />
           Calles asfaltadas
         </li>
-        <li className="flex items-center gap-2">
-          <span className="inline-block h-1 w-5 rounded bg-[#2563eb]" />
-          Ripio con cuneta
-        </li>
+          <li className="flex items-center gap-2">
+            <span className="inline-block h-1 w-5 rounded bg-[#5af916]" />
+            Ripio con cuneta
+          </li>
         <li className="flex items-center gap-2">
           <span className="inline-block h-3 w-4 rounded-sm border border-blue-700 bg-blue-500/30" />
           Manzanas
