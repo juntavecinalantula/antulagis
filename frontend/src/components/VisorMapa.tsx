@@ -69,6 +69,9 @@ export default function VisorMapa({ refreshKey, pestana, onPestana, onReporteCre
   const [formulario, setFormulario] = useState<'problema' | 'propuesta'>('problema');
   const [ubicacion, setUbicacion] = useState<[number, number] | null>(null);
   const [modoUbicacion, setModoUbicacion] = useState(false);
+  // El panel lateral (capas/filtros/reportar/seguimiento) puede ocultarse
+  // por completo para dejar el mapa a pantalla entera.
+  const [panelAbierto, setPanelAbierto] = useState(true);
 
   const manejarEstado = (estado: EstadoMapa) => {
     setEstadoMapa(estado);
