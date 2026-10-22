@@ -34,7 +34,7 @@ export default function Reclamos() {
         </button>
       </div>
       <div className="flex-1 overflow-auto p-6">
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {RECLAMOS_MOCK.map((reclamo) => {
             const estadoInfo = ESTADOS_REPORTE.find(e => e.valor === reclamo.estado);
             const catInfo = CATEGORIAS_PROBLEMA.find(c => c.valor === reclamo.categoria);
