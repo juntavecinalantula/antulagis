@@ -71,7 +71,7 @@ export default function VisorMapa({ refreshKey, pestana, onPestana, onReporteCre
   const [modoUbicacion, setModoUbicacion] = useState(false);
   // El panel lateral (capas/filtros/reportar/seguimiento) puede ocultarse
   // por completo para dejar el mapa a pantalla entera.
-  const [panelAbierto, setPanelAbierto] = useState(true);
+  const [panelAbierto, setPanelAbierto] = useState(false);
 
   const manejarEstado = (estado: EstadoMapa) => {
     setEstadoMapa(estado);
@@ -135,18 +135,16 @@ export default function VisorMapa({ refreshKey, pestana, onPestana, onReporteCre
         <button
           type="button"
           onClick={() => setModoMapa('puntos')}
-          className={`px-3 py-2 text-xs font-bold transition-colors ${
-            modoMapa === 'puntos' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
-          }`}
+          className={`px-3 py-2 text-xs font-bold transition-colors ${modoMapa === 'puntos' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+            }`}
         >
           Puntos
         </button>
         <button
           type="button"
           onClick={() => setModoMapa('calor')}
-          className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold transition-colors ${
-            modoMapa === 'calor' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
-          }`}
+          className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold transition-colors ${modoMapa === 'calor' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+            }`}
         >
           <Flame className="h-3.5 w-3.5" />
           Calor
@@ -175,11 +173,10 @@ export default function VisorMapa({ refreshKey, pestana, onPestana, onReporteCre
                 key={id}
                 type="button"
                 onClick={() => onPestana(id)}
-                className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[10px] font-bold uppercase tracking-wide transition-colors ${
-                  pestana === id
+                className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[10px] font-bold uppercase tracking-wide transition-colors ${pestana === id
                     ? 'bg-blue-600 text-white'
                     : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                }`}
+                  }`}
               >
                 <Icon className="h-4 w-4" />
                 {etiqueta}
@@ -222,22 +219,20 @@ export default function VisorMapa({ refreshKey, pestana, onPestana, onReporteCre
                   <button
                     type="button"
                     onClick={() => setFormulario('problema')}
-                    className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
-                      formulario === 'problema'
+                    className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${formulario === 'problema'
                         ? 'bg-blue-600 text-white'
                         : 'text-slate-600 hover:bg-slate-100'
-                    }`}
+                      }`}
                   >
                     Reportar problema
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormulario('propuesta')}
-                    className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
-                      formulario === 'propuesta'
+                    className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${formulario === 'propuesta'
                         ? 'bg-emerald-600 text-white'
                         : 'text-slate-600 hover:bg-slate-100'
-                    }`}
+                      }`}
                   >
                     Proponer solución
                   </button>
