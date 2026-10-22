@@ -6,10 +6,15 @@ import {
   Clock,
   ArrowUpRight,
   ArrowDownRight,
-  TrendingUp
+  Map as MapIcon
 } from 'lucide-react';
+import MapaBarrio from '../MapaBarrio';
 
-export default function Tablero() {
+interface TableroProps {
+  onNavigate?: (view: 'tablero' | 'mapa' | 'reclamos' | 'obras' | 'catastro' | 'asistente' | 'configuracion') => void;
+}
+
+export default function Tablero({ onNavigate }: TableroProps) {
   const stats = [
     { label: 'Reclamos Activos', value: '24', change: '+12%', trend: 'up', icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-100' },
     { label: 'Obras en Curso', value: '8', change: '+2', trend: 'up', icon: MapPin, color: 'text-blue-600', bg: 'bg-blue-100' },
@@ -48,30 +53,38 @@ export default function Tablero() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Chart Placeholder */}
+        {/* Preview de Mapa GIS */}
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-80 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-slate-900 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-blue-500" />
-              Evolución de Reclamos
+              <MapIcon className="w-4 h-4 text-blue-500" />
+              Visor SIG Territorial (Preview)
             </h3>
-            <select className="text-xs bg-slate-50 border-slate-200 rounded-lg px-2 py-1 outline-none">
-              <option>Últimos 30 días</option>
-              <option>Últimos 6 meses</option>
-            </select>
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('mapa')}
+                className="text-xs bg-blue-50 text-blue-600 font-bold px-3 py-1.5 rounded-xl hover:bg-blue-100 transition-colors"
+              >
+                Abrir Mapa Completo →
+              </button>
+            )}
           </div>
-          <div className="flex-1 flex items-end justify-between gap-2 px-2">
-            {[40, 65, 45, 90, 55, 70, 85, 40, 75, 50, 60, 45].map((h, i) => (
-              <div key={i} className="w-full bg-slate-100 rounded-t-lg relative group transition-all hover:bg-blue-100">
-                <div 
-                  className="absolute bottom-0 left-0 right-0 bg-blue-500 rounded-t-lg transition-all group-hover:bg-blue-600" 
-                  style={{ height: `${h}%` }}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between mt-4 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-            <span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dic</span>
+          <div className="flex-1 relative rounded-xl overflow-hidden border border-slate-200">
+            <MapaBarrio
+              visibles={{
+                manzanas: true,
+                callesAsfalto: true,
+                callesRipio: true,
+                cauces: true,
+                informacion: true,
+                luminaria: true,
+                entradas: true,
+                problemas: true,
+                propuestas: true,
+              }}
+              base="osm"
+              onEstado={() => {}}
+            />
           </div>
         </div>
 

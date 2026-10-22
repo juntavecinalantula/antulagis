@@ -92,7 +92,7 @@ export default function App() {
         </header>
 
         <div className="flex-1 overflow-y-auto relative">
-          {currentView === 'tablero' && <Tablero />}
+          {currentView === 'tablero' && <Tablero onNavigate={handleNavigate} />}
           {currentView === 'mapa' && (
             <MapaBarrio
               visibles={{
